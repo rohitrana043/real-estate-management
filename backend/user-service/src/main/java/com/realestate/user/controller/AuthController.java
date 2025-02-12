@@ -1,11 +1,12 @@
 package com.realestate.user.controller;
 
 import com.realestate.user.dto.LoginDTO;
+import com.realestate.user.dto.LoginResponseDTO;
 import com.realestate.user.dto.RegisterDTO;
-import com.realestate.user.dto.UserDTO;
-import com.realestate.user.service.UserService;
+import com.realestate.user.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,16 +14,23 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserService userService;
+    private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<UserDTO> register(@RequestBody RegisterDTO registerDTO) {
-        return ResponseEntity.ok(userService.registerUser(registerDTO));
+    public ResponseEntity<String> register(@RequestBody RegisterDTO registerDTO) {
+        registerDTO.setRole("ROLE_CLIENT");
+        return ResponseEntity.ok(authService.register(registerDTO));
+    }
+
+    // Admin/Agent registration (secured)
+    @PostMapping("/register/secure")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> registerSecure(@RequestBody RegisterDTO registerDTO) {
+        return ResponseEntity.ok(authService.register(registerDTO));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginDTO loginDTO) {
-        String token = userService.loginUser(loginDTO);
-        return ResponseEntity.ok(token);
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginDTO loginDTO) {
+        return ResponseEntity.ok(authService.login(loginDTO));
     }
 }

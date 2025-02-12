@@ -2,13 +2,21 @@
 server:
   port: 8082
 
+app:
+  url: http://localhost:8082
+  frontend-url: http://localhost:3000 # If you have a separate frontend
+  email:
+    from: noreply@realestate.com
+    verification-url: ${app.url}/api/account/verify
+    password-reset-url: ${app.url}/api/account/password/reset
+
 spring:
   application:
     name: user-service
   datasource:
     url: jdbc:postgresql://localhost:5432/real_estate_user
     username: postgres
-    password: postgres
+    password: sqluser
   jpa:
     hibernate:
       ddl-auto: update
@@ -16,12 +24,32 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: rohit.rana043@gmail.com
+    password: 'pghq iwfy llez sewd'
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 jwt:
   secret: your-secret-key-here-should-be-very-long-and-secure
   expiration: 86400000 # 24 hours in milliseconds
+  refresh:
+    expiration: 604800000 # 7 days
+
+email:
+  verification:
+    expiration: 86400000 # 24 hours
+  password-reset:
+    expiration: 3600000 # 1 hour
 
 eureka:
   client:
+#    enabled: false
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/

@@ -1,5 +1,6 @@
 package com.realestate.user.config;
 
+import com.realestate.user.service.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,15 +1,19 @@
 package com.realestate.user.service;
 
 import com.realestate.user.dto.UserDTO;
+import com.realestate.user.model.Role;
 import com.realestate.user.model.User;
+import com.realestate.user.repository.RoleRepository;
 import com.realestate.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -17,6 +21,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     public UserDTO getCurrentUser() {
@@ -41,19 +46,24 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO updateUser(UserDTO userDTO) {
-        User currentUser;
+    public List<UserDTO> getUsersByRole(String role) {
+        String roleName = role.toUpperCase().startsWith("ROLE_") ? role.toUpperCase() : "ROLE_" + role.toUpperCase();
+        Role roleEntity = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
 
-        // If updating current user's profile
-        if (userDTO.getId() == null) {
-            String email = SecurityContextHolder.getContext().getAuthentication().getName();
-            currentUser = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        } else {
-            // If admin updating another user
-            currentUser = userRepository.findById(userDTO.getId())
-                    .orElseThrow(() -> new RuntimeException("User not found with id: " + userDTO.getId()));
-        }
+        return userRepository.findAll().stream()
+                .filter(user -> user.getRoles().contains(roleEntity))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public UserDTO updateProfile(UserDTO userDTO) {
+        // Get current logged-in user
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         // Update only allowed fields
         if (userDTO.getName() != null) {
@@ -62,10 +72,51 @@ public class UserServiceImpl implements UserService {
         if (userDTO.getPhone() != null) {
             currentUser.setPhone(userDTO.getPhone());
         }
+        if (userDTO.getAddress() != null) {
+            currentUser.setAddress(userDTO.getAddress());
+        }
         // Email cannot be updated
         // Password update should be handled by a separate endpoint with proper validation
 
         User updatedUser = userRepository.save(currentUser);
+        return convertToDTO(updatedUser);
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public UserDTO updateUser(Long id, UserDTO userDTO) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Admin can update additional fields
+        if (userDTO.getName() != null) {
+            user.setName(userDTO.getName());
+        }
+        if (userDTO.getPhone() != null) {
+            user.setPhone(userDTO.getPhone());
+        }
+        if (userDTO.getAddress() != null) {
+            user.setAddress(userDTO.getAddress());
+        }
+        if (userDTO.isEnabled() != user.isEnabled()) {
+            user.setEnabled(userDTO.isEnabled());
+        }
+
+        // Handle role updates if provided
+        if (userDTO.getRoles() != null && !userDTO.getRoles().isEmpty()) {
+            Set<Role> newRoles = userDTO.getRoles().stream()
+                    .map(roleName -> {
+                        String formattedName = roleName.toUpperCase().startsWith("ROLE_") ?
+                                roleName.toUpperCase() : "ROLE_" + roleName.toUpperCase();
+                        return roleRepository.findByName(formattedName)
+                                .orElseThrow(() -> new RuntimeException("Role not found: " + formattedName));
+                    })
+                    .collect(Collectors.toSet());
+            user.setRoles(newRoles);
+        }
+
+        User updatedUser = userRepository.save(user);
         return convertToDTO(updatedUser);
     }
 
@@ -77,12 +128,17 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(id);
     }
 
-    private UserDTO convertToDTO(User user) {
+    public UserDTO convertToDTO(User user) {
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getId());
         userDTO.setName(user.getName());
         userDTO.setEmail(user.getEmail());
         userDTO.setPhone(user.getPhone());
+        userDTO.setAddress(user.getAddress());
+        userDTO.setProfilePicture(user.getProfilePicture());
+        userDTO.setEnabled(user.isEnabled());
+        userDTO.setCreatedAt(user.getCreatedAt());
+        userDTO.setUpdatedAt(user.getUpdatedAt());
         userDTO.setRoles(user.getRoles().stream()
                 .map(role -> role.getName())
                 .collect(Collectors.toSet()));

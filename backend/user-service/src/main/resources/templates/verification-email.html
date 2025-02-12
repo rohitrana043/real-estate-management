@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Email Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+<h2>Welcome to Real Estate!</h2>
+
+<p>Hello <span th:text="${name}">User</span>,</p>
+
+<p>Thank you for registering with us. To complete your registration and verify your email address, please click the button below:</p>
+
+<a th:href="${verificationUrl}" class="button">Verify Email Address</a>
+
+<p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+<p th:text="${verificationUrl}">verification link</p>
+
+<p>This link will expire in 24 hours.</p>
+
+<div class="footer">
+    <p>If you didn't create an account with us, please ignore this email.</p>
+    <p>Best regards,<br>Real Estate Team</p>
+</div>
+</body>
+</html>

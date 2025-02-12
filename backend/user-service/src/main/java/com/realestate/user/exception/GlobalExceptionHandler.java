@@ -10,20 +10,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage()
-        );
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException ex) {
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.UNAUTHORIZED.value(),
-                "Invalid email or password"
-        );
-        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<String> handleBadCredentialsException(BadCredentialsException ex) {
+        return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
     }
 }
