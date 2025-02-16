@@ -1,106 +1,106 @@
 package com.realestate.transaction.service;
 
-import com.realestate.transaction.dto.TransactionDTO;
-import com.realestate.transaction.model.Transaction;
-import com.realestate.transaction.model.TransactionStatus;
-import com.realestate.transaction.repository.TransactionRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
+import com.realestate.transaction.model.*;
+import com.realestate.transaction.repository.*;
+import com.realestate.transaction.dto.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
+    private final PaymentRepository paymentRepository;
 
     @Override
-    public TransactionDTO createTransaction(TransactionDTO transactionDTO) {
+    @Transactional
+    public TransactionDTO createTransaction(TransactionDTO dto) {
         Transaction transaction = new Transaction();
-        BeanUtils.copyProperties(transactionDTO, transaction);
-        transaction.setStatus(TransactionStatus.PENDING);
-        Transaction savedTransaction = transactionRepository.save(transaction);
-        TransactionDTO savedDTO = new TransactionDTO();
-        BeanUtils.copyProperties(savedTransaction, savedDTO);
-        return savedDTO;
-    }
+        transaction.setPropertyId(dto.getPropertyId());
+        transaction.setBuyerId(dto.getBuyerId());
+        transaction.setSellerId(dto.getSellerId());
+        transaction.setAmount(dto.getAmount());
+        transaction.setTransactionNumber(generateTransactionNumber());
 
-    @Override
-    public TransactionDTO updateTransaction(Long id, TransactionDTO transactionDTO) {
-        Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
-        BeanUtils.copyProperties(transactionDTO, transaction, "id", "createdAt");
-        Transaction updatedTransaction = transactionRepository.save(transaction);
-        TransactionDTO updatedDTO = new TransactionDTO();
-        BeanUtils.copyProperties(updatedTransaction, updatedDTO);
-        return updatedDTO;
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        return convertToDTO(savedTransaction);
     }
 
     @Override
     public TransactionDTO getTransaction(Long id) {
         Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
-        TransactionDTO transactionDTO = new TransactionDTO();
-        BeanUtils.copyProperties(transaction, transactionDTO);
-        return transactionDTO;
-    }
-
-    @Override
-    public List<TransactionDTO> getAllTransactions() {
-        return transactionRepository.findAll().stream()
-                .map(transaction -> {
-                    TransactionDTO dto = new TransactionDTO();
-                    BeanUtils.copyProperties(transaction, dto);
-                    return dto;
-                })
-                .collect(Collectors.toList());
+        return convertToDTO(transaction);
     }
 
     @Override
     public List<TransactionDTO> getTransactionsByBuyer(Long buyerId) {
         return transactionRepository.findByBuyerId(buyerId).stream()
-                .map(transaction -> {
-                    TransactionDTO dto = new TransactionDTO();
-                    BeanUtils.copyProperties(transaction, dto);
-                    return dto;
-                })
+                .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<TransactionDTO> getTransactionsBySeller(Long sellerId) {
         return transactionRepository.findBySellerId(sellerId).stream()
-                .map(transaction -> {
-                    TransactionDTO dto = new TransactionDTO();
-                    BeanUtils.copyProperties(transaction, dto);
-                    return dto;
-                })
+                .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<TransactionDTO> getTransactionsByProperty(Long propertyId) {
-        return transactionRepository.findByPropertyId(propertyId).stream()
-                .map(transaction -> {
-                    TransactionDTO dto = new TransactionDTO();
-                    BeanUtils.copyProperties(transaction, dto);
-                    return dto;
-                })
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public TransactionDTO updateTransactionStatus(Long id, TransactionStatus status) {
+    @Transactional
+    public TransactionDTO updateTransactionStatus(Long id, String status) {
         Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
-        transaction.setStatus(status);
+
+        transaction.setStatus(TransactionStatus.valueOf(status));
         Transaction updatedTransaction = transactionRepository.save(transaction);
-        TransactionDTO updatedDTO = new TransactionDTO();
-        BeanUtils.copyProperties(updatedTransaction, updatedDTO);
-        return updatedDTO;
+        return convertToDTO(updatedTransaction);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTransaction(Long id) {
+        transactionRepository.deleteById(id);
+    }
+
+    private String generateTransactionNumber() {
+        return "TXN" + System.currentTimeMillis();
+    }
+
+    private TransactionDTO convertToDTO(Transaction transaction) {
+        TransactionDTO dto = new TransactionDTO();
+        dto.setId(transaction.getId());
+        dto.setTransactionNumber(transaction.getTransactionNumber());
+        dto.setPropertyId(transaction.getPropertyId());
+        dto.setBuyerId(transaction.getBuyerId());
+        dto.setSellerId(transaction.getSellerId());
+        dto.setAmount(transaction.getAmount());
+        dto.setStatus(transaction.getStatus().name());
+        dto.setCreatedAt(transaction.getCreatedAt());
+
+        // Convert payments
+        if (transaction.getPayments() != null) {
+            dto.setPayments(transaction.getPayments().stream()
+                    .map(this::convertToPaymentDTO)
+                    .collect(Collectors.toList()));
+        }
+
+        return dto;
+    }
+
+    private PaymentDTO convertToPaymentDTO(Payment payment) {
+        PaymentDTO dto = new PaymentDTO();
+        dto.setId(payment.getId());
+        dto.setPaymentReference(payment.getPaymentReference());
+        dto.setAmount(payment.getAmount());
+        dto.setStatus(payment.getStatus().name());
+        dto.setPaymentMethod(payment.getPaymentMethod().name());
+        dto.setPaymentDate(payment.getPaymentDate());
+        return dto;
     }
 }

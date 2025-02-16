@@ -10,8 +10,66 @@ spring:
         locator:
           enabled: true
           lowerCaseServiceId: true
+      default-filters:
+        - RemoveRequestHeader=Cookie # Security measure
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 10
+            redis-rate-limiter.burstCapacity: 20
+            redis-rate-limiter.requestedTokens: 1
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5000
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+    instances:
+      propertyCircuitBreaker:
+        baseConfig: default
+      userCircuitBreaker:
+        baseConfig: default
+      transactionCircuitBreaker:
+        baseConfig: default
+      analyticsCircuitBreaker:
+        baseConfig: default
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 3s
+    instances:
+      propertyCircuitBreaker:
+        baseConfig: default
+      userCircuitBreaker:
+        baseConfig: default
+      transactionCircuitBreaker:
+        baseConfig: default
+      analyticsCircuitBreaker:
+        baseConfig: default
 
 eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+    fetchRegistry: true
+    registerWithEureka: true
+    instance:
+      preferIpAddress: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty: DEBUG

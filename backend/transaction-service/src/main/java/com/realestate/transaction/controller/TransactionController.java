@@ -1,15 +1,15 @@
 package com.realestate.transaction.controller;
 
-import com.realestate.transaction.dto.TransactionDTO;
-import com.realestate.transaction.model.TransactionStatus;
 import com.realestate.transaction.service.TransactionService;
-import lombok.RequiredArgsConstructor;
+import com.realestate.transaction.dto.TransactionDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
+
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/transactions")
+@RequestMapping("/api/v1/transactions")
 @RequiredArgsConstructor
 public class TransactionController {
     private final TransactionService transactionService;
@@ -19,21 +19,9 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.createTransaction(transactionDTO));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<TransactionDTO> updateTransaction(
-            @PathVariable Long id,
-            @RequestBody TransactionDTO transactionDTO) {
-        return ResponseEntity.ok(transactionService.updateTransaction(id, transactionDTO));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<TransactionDTO> getTransaction(@PathVariable Long id) {
         return ResponseEntity.ok(transactionService.getTransaction(id));
-    }
-
-    @GetMapping
-    public ResponseEntity<List<TransactionDTO>> getAllTransactions() {
-        return ResponseEntity.ok(transactionService.getAllTransactions());
     }
 
     @GetMapping("/buyer/{buyerId}")
@@ -46,15 +34,16 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.getTransactionsBySeller(sellerId));
     }
 
-    @GetMapping("/property/{propertyId}")
-    public ResponseEntity<List<TransactionDTO>> getTransactionsByProperty(@PathVariable Long propertyId) {
-        return ResponseEntity.ok(transactionService.getTransactionsByProperty(propertyId));
-    }
-
-    @PatchMapping("/{id}/status")
+    @PutMapping("/{id}/status")
     public ResponseEntity<TransactionDTO> updateTransactionStatus(
             @PathVariable Long id,
-            @RequestParam TransactionStatus status) {
+            @RequestParam String status) {
         return ResponseEntity.ok(transactionService.updateTransactionStatus(id, status));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTransaction(@PathVariable Long id) {
+        transactionService.deleteTransaction(id);
+        return ResponseEntity.noContent().build();
     }
 }

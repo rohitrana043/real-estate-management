@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Entity
@@ -13,39 +14,33 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "property_id", nullable = false)
+    private String transactionNumber;
     private Long propertyId;
-
-    @Column(name = "buyer_id", nullable = false)
     private Long buyerId;
-
-    @Column(name = "seller_id", nullable = false)
     private Long sellerId;
-
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
-    private TransactionType type; // SALE, RENT
+    private TransactionStatus status;
 
-    @Enumerated(EnumType.STRING)
-    private TransactionStatus status; // PENDING, APPROVED, COMPLETED, CANCELLED
-
-    private String description;
-
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL)
+    private List<Payment> payments;
+
+    @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL)
+    private List<Document> documents;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        this.status = TransactionStatus.INITIATED;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 }

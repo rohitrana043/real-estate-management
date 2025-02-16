@@ -2,12 +2,14 @@ server:
   port: 8083
 
 spring:
+  profiles:
+    active: local
   application:
     name: transaction-service
   datasource:
     url: jdbc:postgresql://localhost:5432/real_estate_transaction
     username: postgres
-    password: postgres
+    password: sqluser
   jpa:
     hibernate:
       ddl-auto: update
@@ -15,8 +17,46 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: UTC
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
 
 eureka:
   client:
-    serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+    enabled: false
+#    serviceUrl:
+#      defaultZone: http://localhost:8761/eureka/
+#    register-with-eureka: true
+#    fetch-registry: true
+#    instance:
+#      prefer-ip-address: true
+#      hostname: localhost
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+
+#add stripe account details when ready
+#stripe:
+#  api:
+#    key: ${STRIPE_SECRET_KEY}  # Your Stripe Secret Key (sk_test_...)
+#    public-key: ${STRIPE_PUBLIC_KEY}  # Your Stripe Public Key (pk_test_...)
+#    webhook-secret: ${STRIPE_WEBHOOK_SECRET}  # Your Stripe Webhook Secret (whsec_...)
+
+logging:
+  level:
+    root: INFO
+    com.realestate.transaction: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

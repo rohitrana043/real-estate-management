@@ -1,9 +1,12 @@
 package com.realestate.transaction.model;
 
+import com.realestate.transaction.model.Refund;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -13,33 +16,36 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "transaction_id", nullable = false)
-    private Long transactionId;
+    @ManyToOne
+    @JoinColumn(name = "transaction_id")
+    private Transaction transaction;
 
+    private String paymentReference;
+    private String stripePaymentIntentId;
+    private String clientSecret;
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
-    private PaymentStatus status; // PENDING, COMPLETED, FAILED
+    private PaymentStatus status;
 
     @Enumerated(EnumType.STRING)
-    private PaymentMethod method; // CREDIT_CARD, BANK_TRANSFER, CASH
+    private PaymentMethod paymentMethod;
 
-    private String paymentReference;
-
-    @Column(name = "created_at")
+    private LocalDateTime paymentDate;
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL)
+    private List<Refund> refunds = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 }

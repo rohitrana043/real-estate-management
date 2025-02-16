@@ -10,6 +10,9 @@
 	<artifactId>transaction-service</artifactId>
 	<name>transaction-service</name>
 	<description>Transaction Service</description>
+	<properties>
+		<springdoc-openapi.version>2.3.0</springdoc-openapi.version>
+	</properties>
 
 	<dependencies>
 		<dependency>
@@ -37,6 +40,25 @@
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+
+		<!-- Lombok -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- Testing -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.stripe</groupId>
+			<artifactId>stripe-java</artifactId>
+			<version>22.0.0</version>
 		</dependency>
 	</dependencies>
 
