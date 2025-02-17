@@ -22,14 +22,19 @@ spring:
 
 eureka:
   client:
-    enabled: false
-#    serviceUrl:
-#      defaultZone: http://localhost:8761/eureka/
+    #    enabled: false
+    serviceUrl:
+      defaultZone: http://admin:admin123@localhost:8761/eureka/
+    fetchRegistry: true
+    registerWithEureka: true
+  instance:
+    preferIpAddress: false
+    instance-id: ${spring.application.name}:${random.uuid}
 
 aws:
   access:
     key:
-      id: Your-id
+      id: your-id
   secret:
     access:
       key: your-key
@@ -40,6 +45,7 @@ aws:
 
 logging:
   level:
+    root: INFO
     com.realestate.property: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE

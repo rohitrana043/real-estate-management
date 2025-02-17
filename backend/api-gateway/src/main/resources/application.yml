@@ -4,6 +4,13 @@ server:
 spring:
   application:
     name: api-gateway
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
   cloud:
     gateway:
       discovery:
@@ -11,13 +18,31 @@ spring:
           enabled: true
           lowerCaseServiceId: true
       default-filters:
-        - RemoveRequestHeader=Cookie # Security measure
+#        - RemoveRequestHeader=Cookie # Security measure
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
         - name: RequestRateLimiter
           args:
             redis-rate-limiter.replenishRate: 10
             redis-rate-limiter.burstCapacity: 20
             redis-rate-limiter.requestedTokens: 1
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+
+jwt:
+  secret: "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437"
+  expiration: 86400000 # 24 hours in milliseconds
+  refresh:
+    expiration: 604800000 # 7 days
 
 resilience4j:
   circuitbreaker:
@@ -54,22 +79,33 @@ resilience4j:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://admin:admin123@localhost:8761/eureka/
     fetchRegistry: true
     registerWithEureka: true
-    instance:
-      preferIpAddress: true
+  instance:
+    preferIpAddress: false
+    instance-id: ${spring.application.name}:${random.uuid}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: "*"
   endpoint:
     health:
       show-details: always
 
+# Add to application.yml
 logging:
   level:
+    root: INFO
     org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway.route.RouteDefinitionLocator: INFO
+    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: DEBUG
+    org.springframework.web.server.adapter.HttpWebHandlerAdapter: DEBUG
+    org.springframework.cloud.gateway.filter.factory: DEBUG
+    org.springframework.cloud.gateway.filter: DEBUG
     reactor.netty: DEBUG
+    # Custom loggers
+    com.realestate.gateway: DEBUG
+    com.realestate.gateway.filter: DEBUG

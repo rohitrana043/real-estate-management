@@ -16,5 +16,11 @@ spring:
 
 eureka:
   client:
+    #    enabled: false
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://admin:admin123@localhost:8761/eureka/
+    fetchRegistry: true
+    registerWithEureka: true
+  instance:
+    preferIpAddress: false
+    instance-id: ${spring.application.name}:${random.uuid}

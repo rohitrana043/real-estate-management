@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${applicationName + ' - API Documentation'}">API Documentation</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 20px 0;
+        }
+        .endpoint {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        .endpoint-url {
+            color: #2980b9;
+            font-family: monospace;
+            font-size: 1.1em;
+        }
+        .endpoint-description {
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        .services-list {
+            list-style: none;
+            padding: 0;
+        }
+        .service-item {
+            background-color: #e8f4f8;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 th:text="${applicationName + ' Documentation'}">API Documentation</h1>
+
+    <div class="section">
+        <h2>Available Endpoints</h2>
+        <div class="endpoint" th:each="endpoint : ${apiEndpoints}">
+            <div class="endpoint-url" th:text="${endpoint.key}"></div>
+            <div class="endpoint-description" th:text="${endpoint.value}"></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Registered Services</h2>
+        <ul class="services-list">
+            <li class="service-item" th:each="service : ${services}" th:text="${service}"></li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>

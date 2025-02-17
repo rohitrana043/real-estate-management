@@ -27,8 +27,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: your-email@gmail.com
-    password: 'your password'
+    username: yourexample@example.com
+    password: 'your app password'
     properties:
       mail:
         smtp:
@@ -37,7 +37,7 @@ spring:
             enable: true
 
 jwt:
-  secret: your-secret-key-here-should-be-very-long-and-secure
+  secret: '5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437'
   expiration: 86400000 # 24 hours in milliseconds
   refresh:
     expiration: 604800000 # 7 days
@@ -52,4 +52,16 @@ eureka:
   client:
     #    enabled: false
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://admin:admin123@localhost:8761/eureka/
+    fetchRegistry: true
+    registerWithEureka: true
+  instance:
+    preferIpAddress: false
+    instance-id: ${spring.application.name}:${random.uuid}
+
+logging:
+  level:
+    root: INFO
+    com.realestate.user: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG

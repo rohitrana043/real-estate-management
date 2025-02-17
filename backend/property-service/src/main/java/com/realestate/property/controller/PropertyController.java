@@ -34,7 +34,7 @@ public class PropertyController {
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    @PostMapping
+    @PostMapping({"", "/"})
     public ResponseEntity<PropertyDTO> createProperty(@Valid @RequestBody PropertyDTO propertyDTO) {
         log.debug("REST request to create Property : {}", propertyDTO);
         return ResponseEntity.ok(propertyService.createProperty(propertyDTO));
@@ -66,7 +66,7 @@ public class PropertyController {
     }
 
     @Operation(summary = "Get all properties with pagination")
-    @GetMapping("/")
+    @GetMapping({"", "/"})
     public ResponseEntity<Page<PropertyDTO>> getAllProperties(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

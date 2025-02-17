@@ -91,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Validate role name
         if (!roleName.startsWith("ROLE_")) {
-            roleName = "ROLE_" + roleName;
+            roleName = "ROLE_" + roleName.toUpperCase();
         }
         Role userRole = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new RuntimeException("Role not found."));

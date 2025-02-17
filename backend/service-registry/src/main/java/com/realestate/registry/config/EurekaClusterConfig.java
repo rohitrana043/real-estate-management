@@ -9,7 +9,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 @Configuration
-@Profile("prod")
+//@Profile("prod")
 public class EurekaClusterConfig {
 
     @Value("${eureka.instance.hostname}")
@@ -21,14 +21,32 @@ public class EurekaClusterConfig {
     @Value("${spring.security.user.password}")
     private String password;
 
+    @Value("${server.port}")
+    private int port;
+
     @PostConstruct
     public void validateClusterConfig() throws UnknownHostException {
         // Validate hostname resolution
-        InetAddress.getByName(hostname);
+        InetAddress address = InetAddress.getByName(hostname);
 
         // Validate required properties
-        if (username == null || password == null) {
-            throw new IllegalStateException("Eureka security credentials must be configured");
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalStateException("Eureka username must be configured");
         }
+
+        if (password == null || password.trim().isEmpty()) {
+            throw new IllegalStateException("Eureka password must be configured");
+        }
+
+        // Validate port
+        if (port <= 0) {
+            throw new IllegalStateException("Invalid server port configuration");
+        }
+
+        // Log successful configuration
+        logger.info("Eureka cluster configuration validated successfully");
+        logger.info("Hostname resolved to: " + address.getHostAddress());
     }
+
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(EurekaClusterConfig.class);
 }

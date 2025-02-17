@@ -16,3 +16,10 @@ springdoc:
     filter: true
   packages-to-scan: com.realestate.analytics.controller
   paths-to-match: /api/**
+
+logging:
+  level:
+    root: INFO
+    com.realestate.analytics: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

@@ -25,23 +25,29 @@ management:
         enabled: true
 
 eureka:
+  instance:
+    hostname: localhost
+    preferIpAddress: false
+    instanceId: ${spring.application.name}:${server.port}
+    homePageUrl: http://${eureka.instance.hostname}:${server.port}/
+    statusPageUrl: http://${eureka.instance.hostname}:${server.port}/actuator/info
+    healthCheckUrl: http://${eureka.instance.hostname}:${server.port}/actuator/health
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
   client:
     registerWithEureka: false
     fetchRegistry: false
     serviceUrl:
-      defaultZone: http://localhost:${server.port}/eureka/
+      defaultZone: http://${spring.security.user.name}:${spring.security.user.password}@${eureka.instance.hostname}:${server.port}/eureka/
   server:
     waitTimeInMsWhenSyncEmpty: 0
     enableSelfPreservation: false  # Disable in development, enable in production
     renewal-percent-threshold: 0.85
-  instance:
-    hostname: localhost
-    preferIpAddress: true
-    lease-renewal-interval-in-seconds: 30
-    lease-expiration-duration-in-seconds: 90
+    response-cache-update-interval-ms: 3000
+    use-read-only-response-cache: false
 
 logging:
   level:
-    com.netflix.eureka: INFO
-    com.netflix.discovery: INFO
-    org.springframework.security: INFO
+    com.netflix.eureka: DEBUG
+    com.netflix.discovery: DEBUG
+    org.springframework.security: DEBUG
