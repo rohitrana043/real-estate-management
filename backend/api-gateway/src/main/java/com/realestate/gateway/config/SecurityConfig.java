@@ -3,6 +3,7 @@ package com.realestate.gateway.config;
 import com.realestate.gateway.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -23,12 +24,15 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .pathMatchers("/actuator/**",
                                 "/",
                                 "/api/public/**",
                                 "/api/docs/**",
                                 "/api/auth/**",
                                 "/api/account/verify/**",
+                                "/api/properties",
+//                                "/api/properties/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/eureka/**").permitAll()

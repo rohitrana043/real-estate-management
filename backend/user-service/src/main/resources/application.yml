@@ -38,9 +38,9 @@ spring:
 
 jwt:
   secret: '5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437'
-  expiration: 86400000 # 24 hours in milliseconds
+  expiration: 900000 # 15 minutes in milliseconds
   refresh:
-    expiration: 604800000 # 7 days
+    expiration: 604800000 # 7 days in milliseconds
 
 email:
   verification:
@@ -58,6 +58,18 @@ eureka:
   instance:
     preferIpAddress: false
     instance-id: ${spring.application.name}:${random.uuid}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+    tryItOutEnabled: true
+  show-actuator: false
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
 
 logging:
   level:

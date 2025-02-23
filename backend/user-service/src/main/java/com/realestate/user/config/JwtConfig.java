@@ -13,19 +13,29 @@ import java.util.function.Function;
 @Component
 public class JwtConfig {
     private final byte[] secretKeyBytes;
-    private static final long EXPIRATION_TIME = 864_000_000; // 10 days
+
+    @Value("${jwt.expiration}")
+    private long accessTokenExpirationMs; // Short-lived (e.g., 15 minutes)
+
+    @Value("${jwt.refresh.expiration}")
+    private long refreshTokenExpirationMs; // Long-lived (e.g., 7 days)
 
     public JwtConfig(@Value("${jwt.secret}") String secret) {
         this.secretKeyBytes = secret.getBytes();
     }
 
-    public String generateToken(String username) {
+    public String generateAccessToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpirationMs))
                 .signWith(Keys.hmacShaKeyFor(secretKeyBytes), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    // Keeping the existing generateToken for backward compatibility
+    public String generateToken(String username) {
+        return generateAccessToken(username);
     }
 
     public Boolean validateToken(String token, String username) {

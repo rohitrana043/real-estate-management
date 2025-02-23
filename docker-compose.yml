@@ -1,0 +1,223 @@
+version: '3.8'
+
+services:
+  # Database Services
+  postgres-user:
+    image: postgres:15-alpine
+    container_name: postgres-user
+    environment:
+      POSTGRES_DB: real_estate_user
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: sqluser
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+    networks:
+      - real-estate-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-property:
+    image: postgres:15-alpine
+    container_name: postgres-property
+    environment:
+      POSTGRES_DB: real_estate_property
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: sqluser
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-property-data:/var/lib/postgresql/data
+    networks:
+      - real-estate-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-analytics:
+    image: postgres:15-alpine
+    container_name: postgres-analytics
+    environment:
+      POSTGRES_DB: real_estate_analytics
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: sqluser
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-analytics-data:/var/lib/postgresql/data
+    networks:
+      - real-estate-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - real-estate-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Service Registry (Eureka)
+  service-registry:
+    build:
+      context: ./backend/service-registry
+      dockerfile: Dockerfile
+    container_name: service-registry
+    environment:
+      - EUREKA_USERNAME=admin
+      - EUREKA_PASSWORD=admin123
+      - EUREKA_INSTANCE_HOSTNAME=service-registry
+    ports:
+      - "8761:8761"
+    networks:
+      - real-estate-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://admin:admin123@service-registry:8761/eureka/
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      service-registry:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - real-estate-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # User Service
+  user-service:
+    build:
+      context: ./backend/user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-user:5432/real_estate_user
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=sqluser
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://admin:admin123@service-registry:8761/eureka/
+    depends_on:
+      service-registry:
+        condition: service_healthy
+      postgres-user:
+        condition: service_healthy
+    networks:
+      - real-estate-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Property Service
+  property-service:
+    build:
+      context: ./backend/property-service
+      dockerfile: Dockerfile
+    container_name: property-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-property:5432/real_estate_property
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=sqluser
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://admin:admin123@service-registry:8761/eureka/
+      - AWS_ACCESS_KEY_ID=your-access-key
+      - AWS_SECRET_ACCESS_KEY=your-secret-key
+    depends_on:
+      service-registry:
+        condition: service_healthy
+      postgres-property:
+        condition: service_healthy
+    networks:
+      - real-estate-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Analytics Service
+  analytics-service:
+    build:
+      context: ./backend/analytics-service
+      dockerfile: Dockerfile
+    container_name: analytics-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-analytics:5432/real_estate_analytics
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=sqluser
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://admin:admin123@service-registry:8761/eureka/
+    depends_on:
+      service-registry:
+        condition: service_healthy
+      postgres-analytics:
+        condition: service_healthy
+    networks:
+      - real-estate-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api-gateway:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - real-estate-network
+
+# Volumes
+volumes:
+  postgres-user-data:
+  postgres-property-data:
+  postgres-analytics-data:
+
+# Networks
+networks:
+  real-estate-network:
+    driver: bridge

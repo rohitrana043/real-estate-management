@@ -1,11 +1,16 @@
 package com.realestate.property.controller;
 
+import com.realestate.property.config.PropertyApiResponses.StandardResponses;
 import com.realestate.property.dto.PropertyDTO;
 import com.realestate.property.dto.PropertySearchCriteria;
 import com.realestate.property.service.PropertyService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,22 +30,32 @@ import java.util.List;
 @RequestMapping("/api/properties")
 @RequiredArgsConstructor
 @Tag(name = "Property", description = "Property management APIs")
+@Tag(name = "Property", description = "Property management APIs")
+@SecurityRequirement(name = "bearer-jwt")
 public class PropertyController {
     private final PropertyService propertyService;
 
-    @Operation(summary = "Create a new property")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Property created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
+    @Operation(
+            summary = "Create a new property",
+            description = "Creates a new property with the provided details"
+    )
+    @StandardResponses
     @PostMapping({"", "/"})
-    public ResponseEntity<PropertyDTO> createProperty(@Valid @RequestBody PropertyDTO propertyDTO) {
+    public ResponseEntity<PropertyDTO> createProperty(
+            @Parameter(description = "Property details", required = true)
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                                                  required = true,
+                                                                  content = @Content(schema = @Schema(implementation = PropertyDTO.class))
+                                                          )
+            @Valid @RequestBody PropertyDTO propertyDTO) {
         log.debug("REST request to create Property : {}", propertyDTO);
         return ResponseEntity.ok(propertyService.createProperty(propertyDTO));
     }
 
-    @Operation(summary = "Update an existing property")
+    @Operation(
+            summary = "Update an existing property",
+            description = "Updates the property with the specified ID"
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Property updated successfully"),
             @ApiResponse(responseCode = "404", description = "Property not found"),
@@ -48,28 +63,39 @@ public class PropertyController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<PropertyDTO> updateProperty(
+            @Parameter(description = "Property ID", required = true)
             @PathVariable Long id,
+            @Parameter(description = "Updated property details", required = true)
             @Valid @RequestBody PropertyDTO propertyDTO) {
         log.debug("REST request to update Property : {}, {}", id, propertyDTO);
         return ResponseEntity.ok(propertyService.updateProperty(id, propertyDTO));
     }
 
-    @Operation(summary = "Get a property by id")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found the property"),
-            @ApiResponse(responseCode = "404", description = "Property not found")
-    })
+    @Operation(
+            summary = "Get a property by ID",
+            description = "Retrieves the details of a specific property"
+    )
+    @StandardResponses
     @GetMapping("/{id}")
-    public ResponseEntity<PropertyDTO> getProperty(@PathVariable Long id) {
+    public ResponseEntity<PropertyDTO> getProperty(
+            @Parameter(description = "Property ID", required = true)
+            @PathVariable Long id) {
         log.debug("REST request to get Property : {}", id);
         return ResponseEntity.ok(propertyService.getProperty(id));
     }
 
-    @Operation(summary = "Get all properties with pagination")
+    @Operation(
+            summary = "Get all properties with pagination",
+            description = "Retrieves a paginated list of properties with sorting options"
+    )
+    @StandardResponses
     @GetMapping({"", "/"})
     public ResponseEntity<Page<PropertyDTO>> getAllProperties(
+            @Parameter(description = "Page number (0-based)")
             @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of items per page")
             @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sorting criteria in the format: property(,asc|desc). Default sort order is ascending. Multiple sort criteria are supported.")
             @RequestParam(defaultValue = "id,desc") String[] sort) {
 
         log.debug("REST request to get all Properties");
@@ -89,24 +115,34 @@ public class PropertyController {
         return ResponseEntity.ok(propertyService.getAllProperties(pageable));
     }
 
-    @Operation(summary = "Delete a property")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Property deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Property not found")
-    })
+    @Operation(
+            summary = "Delete a property",
+            description = "Deletes the property with the specified ID"
+    )
+    @StandardResponses
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProperty(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProperty(
+            @Parameter(description = "Property ID", required = true)
+            @PathVariable Long id) {
         log.debug("REST request to delete Property : {}", id);
         propertyService.deleteProperty(id);
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Search properties with criteria")
+    @Operation(
+            summary = "Search properties with criteria",
+            description = "Searches for properties based on various criteria with pagination and sorting options"
+    )
+    @StandardResponses
     @GetMapping("/search")
     public ResponseEntity<Page<PropertyDTO>> searchProperties(
+            @Parameter(description = "Search criteria")
             @ModelAttribute PropertySearchCriteria criteria,
+            @Parameter(description = "Page number (0-based)")
             @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of items per page")
             @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sorting criteria in the format: property(,asc|desc). Default sort order is ascending. Multiple sort criteria are supported.")
             @RequestParam(defaultValue = "id,desc") String[] sort) {
 
         log.debug("REST request to search Properties with criteria: {}", criteria);

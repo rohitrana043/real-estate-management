@@ -26,10 +26,10 @@ public class HomeController {
         Map<String, String> apiEndpoints = new HashMap<>();
 
         // Add your API endpoints and their descriptions
-        apiEndpoints.put("/api/properties", "Property Management APIs");
-        apiEndpoints.put("/api/users", "User Management and Auth APIs");
-        apiEndpoints.put("/api/transactions", "Transactions APIs");
-        apiEndpoints.put("/api/analytics", "Analytics APIs");
+        apiEndpoints.put("/api/properties", "Property Management APIs Documentation: http://localhost:8081/api-docs");
+        apiEndpoints.put("/api/users", "User Management and Auth APIs Documentation: http://localhost:8082/api-docs");
+//        apiEndpoints.put("/api/transactions", "Transactions APIs Documentation: http://localhost:8081/api-docs");
+        apiEndpoints.put("/api/analytics", "Analytics APIs Documentation: http://localhost:8084/api-docs");
         // Add more endpoints as needed
 
         model.addAttribute("applicationName", applicationName);

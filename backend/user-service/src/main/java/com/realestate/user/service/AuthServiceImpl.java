@@ -64,6 +64,7 @@ public class AuthServiceImpl implements AuthService {
         return LoginResponseDTO.builder()
                 .token(jwt)
                 .refreshToken(refreshToken.getToken())
+                .tokenType("Bearer")
                 .user(userDTO)
                 .build();
     }

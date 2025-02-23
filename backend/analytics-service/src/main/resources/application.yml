@@ -14,7 +14,8 @@ springdoc:
     operationsSorter: method
     tagsSorter: alpha
     filter: true
-  packages-to-scan: com.realestate.analytics.controller
+    tryItOutEnabled: true
+  packages-to-scan: com.realestate.analytics
   paths-to-match: /api/**
 
 logging:

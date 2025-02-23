@@ -27,9 +27,13 @@ public class JwtAuthenticationConverter implements ServerAuthenticationConverter
     public Mono<Authentication> convert(ServerWebExchange exchange) {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         String path = exchange.getRequest().getPath().value();
+        String method = exchange.getRequest().getMethod().name();
 
-        logger.debug("Processing request for path: {}", path);
-        logger.debug("Authorization header present: {}", authHeader != null);
+        logger.debug("Request details:");
+        logger.debug("Path: {}", path);
+        logger.debug("Method: {}", method);
+        logger.debug("Headers: {}", exchange.getRequest().getHeaders());
+        logger.debug("Authorization header: {}", authHeader);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             logger.debug("No Bearer token found in Authorization header");
@@ -60,4 +64,5 @@ public class JwtAuthenticationConverter implements ServerAuthenticationConverter
             return Mono.empty();
         }
     }
+
 }
