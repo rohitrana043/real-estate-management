@@ -28,6 +28,8 @@ export interface PropertyDTO {
   state: string;
   zipCode: string;
   images?: ImageDTO[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PropertySearchCriteria {
@@ -114,8 +116,6 @@ export enum PropertyType {
   APARTMENT = 'APARTMENT',
   HOUSE = 'HOUSE',
   COMMERCIAL = 'COMMERCIAL',
-  CONDO = 'CONDO',
-  SPECIAL = 'SPECIAL',
 }
 
 export enum PropertyStatus {

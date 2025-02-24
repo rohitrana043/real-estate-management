@@ -1,64 +1,16 @@
 // src/lib/api/auth.ts
 import axiosInstance from './axios';
 import axios, { AxiosError } from 'axios';
-import { SecureRegisterCredentials, AdminRegisterResponse } from '@/types/auth';
-
-export interface LoginDTO {
-  email: string;
-  password: string;
-}
-
-export interface RegisterDTO {
-  name: string;
-  email: string;
-  password: string;
-  phone?: string;
-  address?: string;
-  role?: string;
-}
-
-export interface UserDTO {
-  id: number;
-  name: string;
-  email: string;
-  phone?: string | null;
-  address?: string | null;
-  profilePicture?: string | null;
-  enabled: boolean;
-  roles: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface UpdateProfileDTO {
-  name?: string;
-  email?: string;
-  phone?: string | null;
-  address?: string | null;
-  profilePicture?: string | File | null;
-}
-
-export interface LoginResponseDTO {
-  token: string;
-  refreshToken: string;
-  tokenType: string;
-  user: UserDTO;
-}
-
-export interface TokenResponse {
-  accessToken: string;
-  refreshToken: string;
-  tokenType: string;
-}
-
-export interface PasswordResetRequest {
-  token: string;
-  newPassword: string;
-}
-
-export interface RefreshTokenRequest {
-  refreshToken: string;
-}
+import {
+  LoginDTO,
+  LoginResponseDTO,
+  RegisterDTO,
+  UserDTO,
+  UpdateProfileDTO,
+  TokenResponse,
+  SecureRegisterCredentials,
+  AdminRegisterResponse,
+} from '@/types/auth';
 
 const REFRESH_TOKEN_URL = '/auth/token/refresh';
 const REVOKE_TOKEN_URL = '/auth/token/revoke';
@@ -154,17 +106,6 @@ const authApi = {
     });
   },
 
-  registerSecure: async (
-    data: SecureRegisterCredentials
-  ): Promise<AdminRegisterResponse> => {
-    const response = await axiosInstance.post('/auth/register/secure', data, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-    });
-    return response.data;
-  },
-
   // Add method to check if user has admin privileges
   checkAdminAccess: async (): Promise<boolean> => {
     try {
@@ -177,7 +118,9 @@ const authApi = {
 
   refreshToken: async (refreshToken: string): Promise<TokenResponse> => {
     try {
-      const response = await axios.post(REFRESH_TOKEN_URL, { refreshToken });
+      const response = await axiosInstance.post(REFRESH_TOKEN_URL, {
+        refreshToken,
+      });
       return response.data;
     } catch (error) {
       if (error instanceof AxiosError && error.response?.status === 401) {
@@ -210,6 +153,43 @@ const authApi = {
     } catch (error) {
       return true; // If we can't decode the token, consider it expired
     }
+  },
+
+  registerSecure: async (
+    data: SecureRegisterCredentials
+  ): Promise<AdminRegisterResponse> => {
+    const response = await axiosInstance.post('/auth/register/secure', data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+      },
+    });
+    return response.data;
+  },
+
+  // User management functions
+  getAllUsers: async (): Promise<UserDTO[]> => {
+    const response = await axiosInstance.get('/users');
+    return response.data;
+  },
+
+  getUserById: async (id: number): Promise<UserDTO> => {
+    const response = await axiosInstance.get(`/users/${id}`);
+    return response.data;
+  },
+
+  getUsersByRole: async (role?: string): Promise<UserDTO[]> => {
+    const url = role ? `/users/by-role/${role}` : '/users';
+    const response = await axiosInstance.get(url);
+    return response.data;
+  },
+
+  updateUser: async (id: number, data: Partial<UserDTO>): Promise<UserDTO> => {
+    const response = await axiosInstance.put(`/users/${id}`, data);
+    return response.data;
+  },
+
+  deleteUser: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`/users/${id}`);
   },
 };
 

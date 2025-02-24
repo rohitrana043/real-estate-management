@@ -27,6 +27,7 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .pathMatchers("/actuator/**",
                                 "/",
+                                "/api-docs",
                                 "/api/public/**",
                                 "/api/docs/**",
                                 "/api/auth/**",

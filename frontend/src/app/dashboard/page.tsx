@@ -18,6 +18,8 @@ import {
   ListItemText,
   ListItemAvatar,
   Divider,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -32,6 +34,8 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { translations } from '@/translations';
+import { useDashboard } from '@/hooks/useDashboard';
+import { isAdminOrAgent } from '@/utils/roleUtils';
 
 interface StatCardProps {
   title: string;
@@ -111,43 +115,22 @@ const StatCard: React.FC<StatCardProps> = ({
 };
 
 const RecentActivity: React.FC = () => {
-  const activities = [
-    {
-      id: 1,
-      type: 'property_view',
-      property: 'Modern Apartment',
-      location: 'Downtown',
-      time: '2 hours ago',
-      icon: <VisibilityIcon />,
-    },
-    {
-      id: 2,
-      type: 'favorite_added',
-      property: 'Luxury Villa',
-      location: 'Beachfront',
-      time: '5 hours ago',
-      icon: <FavoriteIcon />,
-    },
-    {
-      id: 3,
-      type: 'message',
-      property: 'Family House',
-      location: 'Suburbs',
-      time: '1 day ago',
-      icon: <MessageIcon />,
-    },
-  ];
+  const { stats } = useDashboard();
+
+  if (!stats?.recentActivity) return null;
 
   return (
     <Card>
       <CardHeader title="Recent Activity" />
       <List sx={{ p: 0 }}>
-        {activities.map((activity, index) => (
+        {stats.recentActivity.map((activity, index) => (
           <React.Fragment key={activity.id}>
             <ListItem alignItems="flex-start">
               <ListItemAvatar>
                 <Avatar sx={{ bgcolor: 'primary.light' }}>
-                  {activity.icon}
+                  {activity.type === 'property_view' && <VisibilityIcon />}
+                  {activity.type === 'favorite_added' && <FavoriteIcon />}
+                  {activity.type === 'message' && <MessageIcon />}
                 </Avatar>
               </ListItemAvatar>
               <ListItemText
@@ -159,11 +142,7 @@ const RecentActivity: React.FC = () => {
                       sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}
                     >
                       <LocationIcon
-                        sx={{
-                          fontSize: 14,
-                          mr: 0.5,
-                          color: 'text.secondary',
-                        }}
+                        sx={{ fontSize: 14, mr: 0.5, color: 'text.secondary' }}
                       />
                       <Typography
                         component="span"
@@ -178,11 +157,7 @@ const RecentActivity: React.FC = () => {
                       sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}
                     >
                       <ScheduleIcon
-                        sx={{
-                          fontSize: 14,
-                          mr: 0.5,
-                          color: 'text.secondary',
-                        }}
+                        sx={{ fontSize: 14, mr: 0.5, color: 'text.secondary' }}
                       />
                       <Typography
                         component="span"
@@ -196,7 +171,7 @@ const RecentActivity: React.FC = () => {
                 }
               />
             </ListItem>
-            {index < activities.length - 1 && (
+            {index < stats.recentActivity.length - 1 && (
               <Divider variant="inset" component="li" />
             )}
           </React.Fragment>
@@ -207,18 +182,30 @@ const RecentActivity: React.FC = () => {
 };
 
 const PropertiesOverview: React.FC = () => {
+  const { stats } = useDashboard();
+  const { user } = useAuth();
+  const showManageButton = isAdminOrAgent(user);
+
+  if (!stats?.propertyStats) return null;
+
   return (
     <Card>
       <CardHeader
         title="Properties Overview"
-        action={<Button color="primary">View All</Button>}
+        action={
+          showManageButton && (
+            <Button color="primary" href="/dashboard/properties">
+              Manage Properties
+            </Button>
+          )
+        }
       />
       <CardContent>
         <Grid container spacing={2}>
           <Grid item xs={6}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="primary.main">
-                15
+                {stats.propertyStats.activeListings}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Active Listings
@@ -228,7 +215,7 @@ const PropertiesOverview: React.FC = () => {
           <Grid item xs={6}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="secondary.main">
-                3
+                {stats.propertyStats.pendingSales}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Pending Sales
@@ -241,22 +228,36 @@ const PropertiesOverview: React.FC = () => {
   );
 };
 
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  icon: React.ReactElement;
-  color: string;
-  trend?: {
-    value: number;
-    isPositive: boolean;
-  };
-}
-
 const DashboardHome: React.FC = () => {
   const theme = useTheme();
   const { user } = useAuth();
   const { language } = useSettings();
+  const { stats, loading, error } = useDashboard();
   const t = translations[language];
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mx: 2, mt: 2 }}>
+        {error}
+      </Alert>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <Alert severity="info" sx={{ mx: 2, mt: 2 }}>
+        No dashboard data available
+      </Alert>
+    );
+  }
 
   return (
     <Box>
@@ -273,37 +274,37 @@ const DashboardHome: React.FC = () => {
         <Grid item xs={12} md={6} lg={3}>
           <StatCard
             title="Total Views"
-            value="2,845"
+            value={stats.totalViews}
             icon={<VisibilityIcon />}
             color={theme.palette.primary.main}
-            trend={{ value: 12, isPositive: true }}
+            trend={stats.propertyStats.trends.views}
           />
         </Grid>
         <Grid item xs={12} md={6} lg={3}>
           <StatCard
             title="Properties"
-            value="18"
+            value={stats.totalProperties}
             icon={<HomeIcon />}
             color={theme.palette.secondary.main}
-            trend={{ value: 5, isPositive: true }}
+            trend={stats.propertyStats.trends.properties}
           />
         </Grid>
         <Grid item xs={12} md={6} lg={3}>
           <StatCard
             title="Favorites"
-            value="245"
+            value={stats.totalFavorites}
             icon={<FavoriteIcon />}
             color={theme.palette.error.main}
-            trend={{ value: 8, isPositive: true }}
+            trend={stats.propertyStats.trends.favorites}
           />
         </Grid>
         <Grid item xs={12} md={6} lg={3}>
           <StatCard
             title="Messages"
-            value="12"
+            value={stats.totalMessages}
             icon={<MessageIcon />}
             color={theme.palette.success.main}
-            trend={{ value: 3, isPositive: false }}
+            trend={stats.propertyStats.trends.messages}
           />
         </Grid>
 

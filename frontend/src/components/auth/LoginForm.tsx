@@ -21,7 +21,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { loginSchema } from '@/lib/validation/auth';
-import { LoginDTO } from '@/lib/api/auth';
+import { LoginDTO } from '@/types/auth';
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);

@@ -1,65 +1,68 @@
 // src/app/dashboard/users/register/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Container, Paper, Typography, Box } from '@mui/material';
+import { useState } from 'react';
+import {
+  Container,
+  Typography,
+  Paper,
+  Box,
+  Button,
+  Alert,
+} from '@mui/material';
+import { ArrowBack } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
-import SecureRegisterForm from '@/components/auth/SecureRegisterForm';
-import authApi from '@/lib/api/auth';
+import UserForm from '@/components/users/UserForm';
+import { withRoleProtection } from '@/components/auth/withRoleProtection';
+import { ROLES } from '@/utils/roleUtils';
+import { useUsers } from '@/hooks/useUsers';
+import type { UserDTO } from '@/types/auth';
 
-export default function SecureRegisterPage() {
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+function AddUserPage() {
   const router = useRouter();
+  const { createUser } = useUsers();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    const checkAuthorization = async () => {
-      try {
-        const hasAccess = await authApi.checkAdminAccess();
-        setIsAuthorized(hasAccess);
-        if (!hasAccess) {
-          router.push('/dashboard');
-        }
-      } catch (error) {
-        router.push('/dashboard');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuthorization();
-  }, [router]);
-
-  if (isLoading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-      >
-        <Typography>Loading...</Typography>
-      </Box>
-    );
-  }
-
-  if (!isAuthorized) {
-    return null;
-  }
+  const handleSubmit = async (data: Partial<UserDTO>) => {
+    setIsSubmitting(true);
+    try {
+      await createUser(data);
+      router.push('/dashboard/users');
+    } catch (error) {
+      // Error is handled by the hook
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <Container component="main" maxWidth="md">
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          mt: 4,
-          borderRadius: 2,
-          bgcolor: 'background.paper',
-        }}
-      >
-        <SecureRegisterForm />
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ mb: 4 }}>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => router.back()}
+          sx={{ mb: 2 }}
+        >
+          Back to Users
+        </Button>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+          Add New User
+        </Typography>
+      </Box>
+
+      <Paper sx={{ p: 4 }}>
+        <Alert severity="info" sx={{ mb: 3 }}>
+          Create a new user account. All users will receive an email with their
+          login credentials.
+        </Alert>
+        <UserForm
+          onSubmit={handleSubmit}
+          isLoading={isSubmitting}
+          onCancel={() => router.back()}
+        />
       </Paper>
     </Container>
   );
 }
+
+export default withRoleProtection(AddUserPage, [ROLES.ADMIN]);

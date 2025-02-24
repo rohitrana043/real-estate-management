@@ -17,34 +17,22 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
-  Dashboard as DashboardIcon,
-  Home as HomeIcon,
-  Person as PersonIcon,
-  Favorite as FavoriteIcon,
-  Search as SearchIcon,
-  Message as MessageIcon,
-  Settings as SettingsIcon,
-  Logout as LogoutIcon,
   ExpandLess,
   ExpandMore,
   Menu as MenuIcon,
   KeyboardDoubleArrowRight as CollapseIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { translations } from '@/translations';
+import { dashboardRoutes } from '@/config/dashboardRoutes';
+import { hasRole } from '@/utils/roleUtils';
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 65;
-
-interface MenuItem {
-  title: string;
-  path: string;
-  icon: React.ReactElement;
-  children?: { title: string; path: string }[];
-}
 
 export default function DashboardSidebar() {
   const [open, setOpen] = useState<string | null>(null);
@@ -56,38 +44,10 @@ export default function DashboardSidebar() {
   const { language } = useSettings();
   const t = translations[language];
 
-  const menuItems: MenuItem[] = [
-    {
-      title: 'Dashboard',
-      path: '/dashboard',
-      icon: <DashboardIcon />,
-    },
-    {
-      title: 'Properties',
-      path: '/dashboard/properties',
-      icon: <HomeIcon />,
-      children: [
-        { title: 'Browse', path: '/properties' },
-        { title: 'Edit Property', path: '/dashboard/properties/edit' },
-        { title: 'Add New', path: '/dashboard/properties/add' },
-      ],
-    },
-    {
-      title: 'Favorite',
-      path: '/dashboard/favorite',
-      icon: <FavoriteIcon />,
-    },
-    {
-      title: 'Messages',
-      path: '/dashboard/messages',
-      icon: <MessageIcon />,
-    },
-    {
-      title: 'Settings',
-      path: '/dashboard/settings',
-      icon: <SettingsIcon />,
-    },
-  ];
+  // Filter routes based on user roles
+  const authorizedRoutes = dashboardRoutes.filter((route) =>
+    route.roles.some((role) => hasRole(user, role))
+  );
 
   const handleClick = (path: string) => {
     if (!isExpanded) {
@@ -110,6 +70,7 @@ export default function DashboardSidebar() {
 
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Header */}
       <Box
         sx={{
           height: 64,
@@ -166,8 +127,9 @@ export default function DashboardSidebar() {
         </IconButton>
       </Box>
 
+      {/* Navigation List */}
       <List sx={{ flexGrow: 1 }}>
-        {menuItems.map((item) => (
+        {authorizedRoutes.map((item) => (
           <Box key={item.path}>
             <ListItem disablePadding>
               <Tooltip title={!isExpanded ? item.title : ''} placement="right">
@@ -207,7 +169,7 @@ export default function DashboardSidebar() {
                           : 'inherit',
                     }}
                   >
-                    {item.icon}
+                    {<item.icon />}
                   </ListItemIcon>
                   {isExpanded && (
                     <>
@@ -223,22 +185,26 @@ export default function DashboardSidebar() {
             {isExpanded && item.children && (
               <Collapse in={open === item.path} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
-                  {item.children.map((child) => (
-                    <ListItemButton
-                      key={child.path}
-                      selected={pathname === child.path}
-                      onClick={() => router.push(child.path)}
-                      sx={{
-                        pl: 4,
-                        '&.Mui-selected': {
-                          bgcolor: 'primary.light',
-                          color: 'primary.contrastText',
-                        },
-                      }}
-                    >
-                      <ListItemText primary={child.title} />
-                    </ListItemButton>
-                  ))}
+                  {item.children
+                    .filter((child) =>
+                      child.roles.some((role) => hasRole(user, role))
+                    )
+                    .map((child) => (
+                      <ListItemButton
+                        key={child.path}
+                        selected={pathname === child.path}
+                        onClick={() => router.push(child.path)}
+                        sx={{
+                          pl: 4,
+                          '&.Mui-selected': {
+                            bgcolor: 'primary.light',
+                            color: 'primary.contrastText',
+                          },
+                        }}
+                      >
+                        <ListItemText primary={child.title} />
+                      </ListItemButton>
+                    ))}
                 </List>
               </Collapse>
             )}
@@ -246,6 +212,7 @@ export default function DashboardSidebar() {
         ))}
       </List>
 
+      {/* User Info and Logout */}
       <Box
         sx={{
           p: 2,
@@ -260,17 +227,14 @@ export default function DashboardSidebar() {
             <Typography variant="body2" color="text.secondary">
               Logged in as:
             </Typography>
-            <Typography variant="body2" fontWeight="medium" sx={{ mb: 2 }}>
-              {user?.name}
+            <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+              {user?.name} ({user?.roles?.[0]?.replace('ROLE_', '')})
             </Typography>
           </>
         )}
         <Tooltip title={!isExpanded ? 'Logout' : ''} placement="right">
           <ListItemButton
-            onClick={(e: React.MouseEvent) => {
-              e.preventDefault();
-              logout();
-            }}
+            onClick={() => logout()}
             sx={{
               borderRadius: 1,
               minWidth: 0,
