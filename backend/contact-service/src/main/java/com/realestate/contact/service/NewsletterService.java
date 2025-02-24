@@ -1,5 +1,6 @@
 package com.realestate.contact.service;
 
+import com.realestate.contact.actuator.ContactMetrics;
 import com.realestate.contact.dto.NewsletterRequest;
 import com.realestate.contact.dto.NewsletterResponse;
 import com.realestate.contact.exception.DuplicateResourceException;
@@ -8,6 +9,7 @@ import com.realestate.contact.model.Newsletter;
 import com.realestate.contact.repository.NewsletterRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,12 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class NewsletterService {
     private final NewsletterRepository newsletterRepository;
     private final EmailService emailService;
+    @Autowired
+    private ContactMetrics contactMetrics;
 
     @Transactional
     public NewsletterResponse subscribe(NewsletterRequest request) {
         log.info("Processing newsletter subscription for email: {}", request.getEmail());
         String email = request.getEmail().toLowerCase();
-
+        contactMetrics.incrementNewsletterSubscriptions();
         // Check if already subscribed
         return newsletterRepository.findByEmail(email)
                 .map(existing -> handleExistingSubscriber(existing))

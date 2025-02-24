@@ -64,16 +64,41 @@ springdoc:
   show-actuator: false
   default-produces-media-type: application/json
   default-consumes-media-type: application/json
+  packages-to-scan: com.realestate.contact.controller
 
 # Actuator Configuration
 management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: "*"  # Expose all endpoints
+      base-path: /actuator  # Base path for actuator endpoints
   endpoint:
+    health-ui:
+      enabled: true
     health:
       show-details: always
+      probes:
+        enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  info:
+    env:
+      enabled: true
+    git:
+      mode: full
+    java:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  health:
+    mail:
+      enabled: true  # Enable email health check
+    db:
+      enabled: true  # Enable database health check
 
 logging:
   level:
