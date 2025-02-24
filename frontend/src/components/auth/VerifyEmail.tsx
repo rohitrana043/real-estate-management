@@ -11,14 +11,16 @@ import {
   Alert,
 } from '@mui/material';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function VerifyEmail() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
   const { verifyEmail, resendVerification } = useAuth();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const token = searchParams?.get('token');
 
   useEffect(() => {
@@ -32,23 +34,52 @@ export default function VerifyEmail() {
       try {
         await verifyEmail(token);
         setIsVerifying(false);
+        setShowSuccess(true);
+
+        // Delay redirect by 3 seconds after successful verification
+        setTimeout(() => {
+          router.push('/login');
+        }, 3000);
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Verification failed');
-        setEmail(err.response?.data?.email || null);
+        // More specific error handling
+        const errorResponse = err.response?.data;
+        // Handle case where response is a string
+        const errorMessage =
+          typeof errorResponse === 'string'
+            ? errorResponse
+            : errorResponse?.message;
+
+        if (errorMessage?.toLowerCase().includes('expired')) {
+          setError('Verification link has expired. Please request a new one.');
+        } else if (errorMessage?.toLowerCase().includes('invalid')) {
+          setError(
+            'Invalid verification link. Please check your email for the correct link.'
+          );
+        } else {
+          setError(errorMessage || 'Verification failed. Please try again.');
+        }
+
+        // Extract email from response if available
+        const email =
+          typeof errorResponse === 'object' ? errorResponse?.email : null;
+        setEmail(email);
         setIsVerifying(false);
       }
     };
 
     verify();
-  }, [token, verifyEmail]);
+  }, [token, verifyEmail, router]);
 
   const handleResendVerification = async () => {
     if (!email) return;
 
     try {
       await resendVerification(email);
-    } catch (err) {
-      // Error handling is done in the auth context
+      setError(
+        'A new verification email has been sent. Please check your inbox.'
+      );
+    } catch (err: any) {
+      setError('Failed to resend verification email. Please try again later.');
     }
   };
 
@@ -94,10 +125,11 @@ export default function VerifyEmail() {
               </Button>
             )}
           </Box>
-        ) : (
+        ) : showSuccess ? (
           <Box>
             <Alert severity="success" sx={{ mb: 3 }}>
-              Your email has been verified successfully!
+              Your email has been verified successfully! You will be redirected
+              to the login page in 3 seconds.
             </Alert>
             <Button
               variant="contained"
@@ -105,10 +137,10 @@ export default function VerifyEmail() {
               href="/login"
               sx={{ mt: 2 }}
             >
-              Proceed to Login
+              Go to Login Now
             </Button>
           </Box>
-        )}
+        ) : null}
       </Paper>
     </Box>
   );

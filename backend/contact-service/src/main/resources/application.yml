@@ -3,6 +3,8 @@ server:
   port: 8086
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  email:
+    from: noreply@realestate.com
 
 spring:
   application:
@@ -26,18 +28,18 @@ spring:
 
   # Email Configuration
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:rohit.rana043@gmail.com}
-    password: ${MAIL_PASSWORD:'pghq iwfy llez sewd'}
+    host: smtp.gmail.com
+    port: 587
+    username: rohit.rana043@gmail.com
+    password: 'zwfn dsym eivz ibyf'
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
-          timeout: 5000
           connectiontimeout: 5000
+          timeout: 5000
           writetimeout: 5000
 
 # Eureka Configuration

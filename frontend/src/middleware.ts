@@ -14,6 +14,7 @@ const publicPaths = [
   '/contact',
   '/services',
   '/properties',
+  '/newsletter',
 ];
 
 // Auth paths that should redirect to dashboard if already logged in

@@ -26,7 +26,7 @@ public class GatewayConfig {
                                         .setName("contactCircuitBreaker")
                                         .setFallbackUri("forward:/fallback/contact")))
                         .uri("lb://contact-service"))
-                .route("contact-service", r -> r
+                .route("newsletter-service", r -> r
                         .path("/api/newsletter/**", "/newsletter/**")
                         .filters(f -> f
                                 .circuitBreaker(config -> config
