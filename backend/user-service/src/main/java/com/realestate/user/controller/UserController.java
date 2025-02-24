@@ -1,5 +1,6 @@
 package com.realestate.user.controller;
 
+import com.realestate.user.dto.ChangePasswordDTO;
 import com.realestate.user.dto.UserDTO;
 import com.realestate.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -140,5 +141,20 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
+    }
+
+    @Operation(
+            summary = "Change user password",
+            description = "Changes the password for the currently authenticated user"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password changed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or passwords don't match"),
+            @ApiResponse(responseCode = "401", description = "Current password is incorrect")
+    })
+    @PostMapping("/change-password")
+    @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'ADMIN')")
+    public ResponseEntity<String> changePassword(@Valid @RequestBody ChangePasswordDTO changePasswordDTO) {
+        return ResponseEntity.ok(userService.changePassword(changePasswordDTO));
     }
 }

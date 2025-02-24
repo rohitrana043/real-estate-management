@@ -77,27 +77,25 @@ export default function SellPropertyPage() {
     {
       title: 'Professional Photography & Virtual Tours',
       description: `High-quality images and immersive 3D tours that showcase your property's best features and give buyers a realistic preview.`,
-      image: 'https://robohash.org/photo-tour?set=set4&bgset=&size=400x300',
+      image: '/images/virtual-tour.svg',
     },
     {
       title: 'Strategic Online Presence',
       description:
         'Optimized listings on major real estate platforms, our website, and social media to maximize visibility to potential buyers.',
-      image: 'https://robohash.org/online-listing?set=set4&bgset=&size=400x300',
+      image: '/images/online-presence.svg',
     },
     {
       title: 'Print & Direct Marketing',
       description:
         'Professionally designed brochures, feature sheets, and targeted direct mail campaigns to reach specific buyer demographics.',
-      image:
-        'https://robohash.org/print-marketing?set=set4&bgset=&size=400x300',
+      image: '/images/digital-marketing.svg',
     },
     {
       title: 'Network & Database Marketing',
       description:
         'Promotion to our extensive network of potential buyers, investors, and fellow agents who may have interested clients.',
-      image:
-        'https://robohash.org/network-marketing?set=set4&bgset=&size=400x300',
+      image: '/images/database-networking.svg',
     },
   ];
 
@@ -110,8 +108,7 @@ export default function SellPropertyPage() {
           color: 'primary.contrastText',
           py: 8,
           position: 'relative',
-          backgroundImage:
-            'url("https://robohash.org/selling-hero?set=set4&bgset=&size=400x400")',
+          backgroundImage: 'url("/images/services-sell-bg.jpg")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           '&::before': {
@@ -121,7 +118,7 @@ export default function SellPropertyPage() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
           },
         }}
       >
@@ -163,12 +160,10 @@ export default function SellPropertyPage() {
           <Grid item xs={12} md={6}>
             <Box
               component="img"
-              src="https://robohash.org/sell-service?set=set4&bgset=&size=500x500"
+              src="/images/sweet-home.svg"
               alt="Property sold sign"
               sx={{
                 width: '100%',
-                borderRadius: 2,
-                boxShadow: 3,
               }}
             />
           </Grid>
@@ -275,6 +270,7 @@ export default function SellPropertyPage() {
                   height="200"
                   image={service.image}
                   alt={service.title}
+                  sx={{ margin: 'auto', width: 'auto' }}
                 />
                 <CardContent>
                   <Typography variant="h6" component="h3" gutterBottom>

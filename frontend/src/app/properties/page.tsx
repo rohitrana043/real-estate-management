@@ -22,6 +22,7 @@ import {
   Slider,
   TextField,
 } from '@mui/material';
+import { SelectChangeEvent } from '@mui/material/Select';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SortIcon from '@mui/icons-material/Sort';
@@ -33,6 +34,10 @@ import {
   PropertyDTO,
   PropertySearchCriteria,
   PagePropertyDTO,
+  SortOption,
+  FilterState,
+  DEFAULT_FILTERS,
+  DEFAULT_PRICE_RANGE,
   PropertyType,
   PropertyStatus,
 } from '@/types/property';
@@ -45,7 +50,6 @@ export default function PropertiesPage() {
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchCriteria, setSearchCriteria] = useState<PropertySearchCriteria>(
     {}
   );
@@ -53,15 +57,78 @@ export default function PropertiesPage() {
   const [favoritePropertyIds, setFavoritePropertyIds] = useState<Set<number>>(
     new Set()
   );
+
+  // Filter state
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+
   const { user } = useAuth();
 
   // Price range slider
   const [priceRange, setPriceRange] = useState<number[]>([0, 2000000]);
+  // Add sorting state
+  const [sortBy, setSortBy] = useState<string>('newest');
+
+  // Define sort options
+  const sortOptions: SortOption[] = [
+    { label: 'Newest', value: 'newest', field: 'createdAt', direction: 'desc' },
+    {
+      label: 'Price (Low to High)',
+      value: 'price_low',
+      field: 'price',
+      direction: 'asc',
+    },
+    {
+      label: 'Price (High to Low)',
+      value: 'price_high',
+      field: 'price',
+      direction: 'desc',
+    },
+  ];
+
+  const clearFilters = () => {
+    setSearchCriteria({});
+    setPriceRange([0, 2000000]);
+    setSearchTerm('');
+    setSortBy('newest'); // Reset sort to default
+    setPage(1);
+    fetchProperties();
+  };
+
+  // Convert filters to search criteria
+  const getSearchCriteria = (): PropertySearchCriteria => {
+    return {
+      keyword: searchTerm || undefined,
+      type: filters.type !== 'all' ? (filters.type as PropertyType) : undefined,
+      status:
+        filters.status !== 'all'
+          ? (filters.status as PropertyStatus)
+          : undefined,
+      minBedrooms:
+        filters.bedrooms !== 'all' ? parseInt(filters.bedrooms) : undefined,
+      minBathrooms:
+        filters.bathrooms !== 'all' ? parseInt(filters.bathrooms) : undefined,
+      minPrice:
+        filters.priceRange[0] > DEFAULT_PRICE_RANGE[0]
+          ? filters.priceRange[0]
+          : undefined,
+      maxPrice:
+        filters.priceRange[1] < DEFAULT_PRICE_RANGE[1]
+          ? filters.priceRange[1]
+          : undefined,
+    };
+  };
+
+  const handleSortChange = (event: SelectChangeEvent<string>) => {
+    const newSortValue = event.target.value;
+    setSortBy(newSortValue);
+    setPage(1); // Reset to first page when sorting changes
+  };
 
   // Fetch properties on page load and when pagination changes
   useEffect(() => {
     fetchProperties();
-  }, [page]);
+  }, [page, sortBy]);
 
   // Fetch favorite IDs when component mounts and user is logged in
   useEffect(() => {
@@ -84,21 +151,29 @@ export default function PropertiesPage() {
     setError(null);
 
     try {
+      const selectedSort = sortOptions.find(
+        (option) => option.value === sortBy
+      );
+      const sortQuery = selectedSort
+        ? [`${selectedSort.field},${selectedSort.direction}`]
+        : ['createdAt,desc'];
+
+      const searchCriteria = getSearchCriteria();
+      const hasActiveFilters = Object.values(searchCriteria).some(
+        (value) => value !== undefined
+      );
+
       let propertiesData: PagePropertyDTO;
 
-      // If there are search criteria or search term, use search API
-      if (searchTerm || Object.keys(searchCriteria).length > 0) {
-        // Add search term to search criteria
-        const criteria: PropertySearchCriteria = {
-          ...searchCriteria,
-          keyword: searchTerm || undefined,
-          minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
-          maxPrice: priceRange[1] < 2000000 ? priceRange[1] : undefined,
-        };
-
-        propertiesData = await searchProperties(criteria, page - 1);
+      if (hasActiveFilters) {
+        propertiesData = await searchProperties(
+          searchCriteria,
+          page - 1,
+          10,
+          sortQuery
+        );
       } else {
-        propertiesData = await getProperties(page - 1);
+        propertiesData = await getProperties(page - 1, 10, sortQuery);
       }
 
       setProperties(propertiesData.content);
@@ -120,27 +195,63 @@ export default function PropertiesPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Search form submit
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(1); // Reset to first page
+    setPage(1);
     fetchProperties();
   };
 
+  // Handle filter changes
   const handleFilterChange = (
-    key: keyof PropertySearchCriteria,
-    value: any
+    field: keyof FilterState,
+    value: string | number | [number, number]
   ) => {
-    setSearchCriteria((prev) => ({
+    setFilters((prev) => ({
       ...prev,
-      [key]: value === 'all' ? undefined : value,
+      [field]: value,
     }));
   };
 
-  const clearFilters = () => {
-    setSearchCriteria({});
-    setPriceRange([0, 2000000]);
+  // Apply filters
+  const handleApplyFilters = () => {
+    setPage(1); // Reset to first page
+    fetchProperties();
+    setShowFilters(false); // Optionally close the filter panel
+  };
+
+  // Clear filters
+  const handleClearFilters = () => {
+    setFilters(DEFAULT_FILTERS);
     setSearchTerm('');
     setPage(1);
+    fetchProperties();
+    setShowFilters(false);
+  };
+
+  const applyFilters = () => {
+    // Reset to first page when applying filters
+    setPage(1);
+
+    // Create filter criteria
+    const filters: PropertySearchCriteria = {
+      ...searchCriteria,
+      keyword: searchTerm || undefined,
+      minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
+      maxPrice: priceRange[1] < 2000000 ? priceRange[1] : undefined,
+    };
+
+    // Remove any undefined or null values
+    Object.keys(filters).forEach((key) => {
+      if (
+        filters[key as keyof PropertySearchCriteria] === undefined ||
+        filters[key as keyof PropertySearchCriteria] === null
+      ) {
+        delete filters[key as keyof PropertySearchCriteria];
+      }
+    });
+
+    setSearchCriteria(filters);
     fetchProperties();
   };
 
@@ -184,8 +295,7 @@ export default function PropertiesPage() {
         <Typography variant="h4" component="h1" sx={{ mb: 4, fontWeight: 700 }}>
           Explore Our Properties
         </Typography>
-
-        {/* Search and Filter Bar */}
+        {/* Search Bar */}
         <Paper
           component="form"
           elevation={2}
@@ -212,15 +322,16 @@ export default function PropertiesPage() {
             </Button>
           </Box>
 
-          {/* Filter options */}
+          {/* Filter Panel */}
           {showFilters && (
             <Box sx={{ mt: 3 }}>
               <Grid container spacing={3}>
+                {/* Property Type Filter */}
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Property Type</InputLabel>
                     <Select
-                      value={searchCriteria.type || 'all'}
+                      value={filters.type}
                       onChange={(e) =>
                         handleFilterChange('type', e.target.value)
                       }
@@ -230,14 +341,18 @@ export default function PropertiesPage() {
                       <MenuItem value="APARTMENT">Apartment</MenuItem>
                       <MenuItem value="HOUSE">House</MenuItem>
                       <MenuItem value="COMMERCIAL">Commercial</MenuItem>
+                      <MenuItem value="CONDO">Condo</MenuItem>
+                      <MenuItem value="SPECIAL">Special</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
+
+                {/* Status Filter */}
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Status</InputLabel>
                     <Select
-                      value={searchCriteria.status || 'all'}
+                      value={filters.status}
                       onChange={(e) =>
                         handleFilterChange('status', e.target.value)
                       }
@@ -250,55 +365,62 @@ export default function PropertiesPage() {
                     </Select>
                   </FormControl>
                 </Grid>
+
+                {/* Bedrooms Filter */}
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Bedrooms</InputLabel>
                     <Select
-                      value={searchCriteria.minBedrooms || 'all'}
+                      value={filters.bedrooms}
                       onChange={(e) =>
-                        handleFilterChange('minBedrooms', e.target.value)
+                        handleFilterChange('bedrooms', e.target.value)
                       }
                       label="Bedrooms"
                     >
                       <MenuItem value="all">Any</MenuItem>
-                      <MenuItem value={1}>1+</MenuItem>
-                      <MenuItem value={2}>2+</MenuItem>
-                      <MenuItem value={3}>3+</MenuItem>
-                      <MenuItem value={4}>4+</MenuItem>
-                      <MenuItem value={5}>5+</MenuItem>
+                      <MenuItem value="1">1+</MenuItem>
+                      <MenuItem value="2">2+</MenuItem>
+                      <MenuItem value="3">3+</MenuItem>
+                      <MenuItem value="4">4+</MenuItem>
+                      <MenuItem value="5">5+</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
+
+                {/* Bathrooms Filter */}
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Bathrooms</InputLabel>
                     <Select
-                      value={searchCriteria.minBathrooms || 'all'}
+                      value={filters.bathrooms}
                       onChange={(e) =>
-                        handleFilterChange('minBathrooms', e.target.value)
+                        handleFilterChange('bathrooms', e.target.value)
                       }
                       label="Bathrooms"
                     >
                       <MenuItem value="all">Any</MenuItem>
-                      <MenuItem value={1}>1+</MenuItem>
-                      <MenuItem value={2}>2+</MenuItem>
-                      <MenuItem value={3}>3+</MenuItem>
-                      <MenuItem value={4}>4+</MenuItem>
+                      <MenuItem value="1">1+</MenuItem>
+                      <MenuItem value="2">2+</MenuItem>
+                      <MenuItem value="3">3+</MenuItem>
+                      <MenuItem value="4">4+</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
+
+                {/* Price Range Filter */}
                 <Grid item xs={12}>
-                  <Typography id="price-range-slider" gutterBottom>
-                    Price Range
-                  </Typography>
+                  <Typography gutterBottom>Price Range</Typography>
                   <Slider
-                    value={priceRange}
-                    onChange={(_event, newValue: number | number[]) =>
-                      setPriceRange(newValue as number[])
+                    value={filters.priceRange}
+                    onChange={(_event, newValue) =>
+                      handleFilterChange(
+                        'priceRange',
+                        newValue as [number, number]
+                      )
                     }
                     valueLabelDisplay="auto"
-                    min={0}
-                    max={2000000}
+                    min={DEFAULT_PRICE_RANGE[0]}
+                    max={DEFAULT_PRICE_RANGE[1]}
                     step={50000}
                     valueLabelFormat={(value) => `$${value.toLocaleString()}`}
                   />
@@ -310,28 +432,23 @@ export default function PropertiesPage() {
                     }}
                   >
                     <Typography variant="body2">
-                      ${priceRange[0].toLocaleString()}
+                      ${filters.priceRange[0].toLocaleString()}
                     </Typography>
                     <Typography variant="body2">
-                      ${priceRange[1].toLocaleString()}
+                      ${filters.priceRange[1].toLocaleString()}
                     </Typography>
                   </Box>
                 </Grid>
+
+                {/* Filter Actions */}
                 <Grid item xs={12}>
                   <Box
                     sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}
                   >
-                    <Button variant="outlined" onClick={clearFilters}>
+                    <Button variant="outlined" onClick={handleClearFilters}>
                       Clear Filters
                     </Button>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => {
-                        setPage(1);
-                        fetchProperties();
-                      }}
-                    >
+                    <Button variant="contained" onClick={handleApplyFilters}>
                       Apply Filters
                     </Button>
                   </Box>
@@ -389,18 +506,18 @@ export default function PropertiesPage() {
                   <FormControl size="small" sx={{ minWidth: 150 }}>
                     <InputLabel>Sort By</InputLabel>
                     <Select
-                      value="newest"
-                      onChange={() => {}}
+                      value={sortBy}
+                      onChange={handleSortChange}
                       label="Sort By"
                       startAdornment={
                         <SortIcon fontSize="small" sx={{ mr: 1 }} />
                       }
                     >
-                      <MenuItem value="newest">Newest</MenuItem>
-                      <MenuItem value="price_low">Price (Low to High)</MenuItem>
-                      <MenuItem value="price_high">
-                        Price (High to Low)
-                      </MenuItem>
+                      {sortOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 </Box>

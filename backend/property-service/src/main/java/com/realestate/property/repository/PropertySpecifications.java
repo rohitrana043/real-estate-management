@@ -72,12 +72,15 @@ public class PropertySpecifications {
                 predicates.add(cb.equal(root.get("zipCode"), criteria.getZipCode()));
             }
 
-            // Title and description search
+            // Enhanced keyword search for title, description, and location fields
             if (criteria.getKeyword() != null && !criteria.getKeyword().isEmpty()) {
                 String keyword = "%" + criteria.getKeyword().toLowerCase() + "%";
                 predicates.add(cb.or(
                         cb.like(cb.lower(root.get("title")), keyword),
-                        cb.like(cb.lower(root.get("description")), keyword)
+                        cb.like(cb.lower(root.get("description")), keyword),
+                        cb.like(cb.lower(root.get("city")), keyword),
+                        cb.like(cb.lower(root.get("state")), keyword),
+                        cb.like(cb.lower(root.get("zipCode")), keyword)
                 ));
             }
 

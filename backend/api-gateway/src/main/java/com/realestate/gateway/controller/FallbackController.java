@@ -19,10 +19,10 @@ public class FallbackController {
         return Mono.just("User Service is currently unavailable. Please try again later.");
     }
 
-//    @GetMapping("/transaction")
-//    public Mono<String> transactionServiceFallback() {
-//        return Mono.just("Transaction Service is currently unavailable. Please try again later.");
-//    }
+    @GetMapping("/contact")
+    public Mono<String> contactServiceFallback() {
+        return Mono.just("Contact Service is currently unavailable. Please try again later.");
+    }
 
     @GetMapping("/analytics")
     public Mono<String> analyticsServiceFallback() {

@@ -103,8 +103,7 @@ export default function RentPropertyPage() {
           color: 'primary.contrastText',
           py: 8,
           position: 'relative',
-          backgroundImage:
-            'url("https://robohash.org/renting-hero?set=set4&bgset=&size=400x400")',
+          backgroundImage: 'url("/images/services-rental-bg.jpg")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           '&::before': {
@@ -114,7 +113,7 @@ export default function RentPropertyPage() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
           },
         }}
       >
@@ -224,7 +223,7 @@ export default function RentPropertyPage() {
               <Grid item xs={12} md={6}>
                 <Box
                   component="img"
-                  src="https://robohash.org/renter-service?set=set4&bgset=&size=500x500"
+                  src="/images/services-for-renters.svg"
                   alt="Happy renters"
                   sx={{
                     width: '100%',
@@ -342,7 +341,7 @@ export default function RentPropertyPage() {
               <Grid item xs={12} md={6}>
                 <Box
                   component="img"
-                  src="https://robohash.org/landlord-service?set=set4&bgset=&size=500x500"
+                  src="/images/services-for-owners.svg"
                   alt="Property management"
                   sx={{
                     width: '100%',

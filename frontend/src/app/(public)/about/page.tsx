@@ -42,9 +42,9 @@ export default function AboutPage() {
 
   const teamMembers = [
     {
-      name: 'John Smith',
+      name: 'Rohit Rana',
       role: 'CEO & Founder',
-      bio: 'John has over 20 years of experience in real estate and has helped hundreds of families find their dream homes.',
+      bio: 'Rohit has over 20 years of experience in real estate and has helped hundreds of families find their dream homes.',
       avatar: 'https://robohash.org/john-smith?set=set4&bgset=&size=200x200',
     },
     {
@@ -73,24 +73,37 @@ export default function AboutPage() {
       {/* Hero Section */}
       <Box
         sx={{
-          bgcolor: 'primary.main',
-          color: 'primary.contrastText',
-          py: 8,
-          textAlign: 'center',
+          bgcolor: 'background.paper',
+          position: 'relative',
+          pt: 8,
+          pb: 12,
+          backgroundImage:
+            'linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url("/images/about-bg.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
         <Container maxWidth="md">
-          <Typography
-            variant="h2"
-            component="h1"
-            gutterBottom
-            fontWeight="bold"
+          <Box
+            sx={{
+              maxWidth: 800,
+              mx: 'auto',
+              textAlign: 'center',
+              color: 'white',
+            }}
           >
-            About Us
-          </Typography>
-          <Typography variant="h5" sx={{ mb: 4 }}>
-            Your Trusted Partner in Real Estate Since 2009
-          </Typography>
+            <Typography
+              variant="h2"
+              component="h1"
+              gutterBottom
+              fontWeight="bold"
+            >
+              About Us
+            </Typography>
+            <Typography variant="h5" sx={{ mb: 4 }}>
+              Your Trusted Partner in Real Estate Since 2009
+            </Typography>
+          </Box>
         </Container>
       </Box>
 
@@ -124,12 +137,10 @@ export default function AboutPage() {
           <Grid item xs={12} md={6}>
             <Box
               component="img"
-              src="https://robohash.org/about-company?set=set4&bgset=&size=500x500"
+              src="/images/about-page-svg.svg"
               alt="Company building"
               sx={{
                 width: '100%',
-                borderRadius: 2,
-                boxShadow: 3,
               }}
             />
           </Grid>

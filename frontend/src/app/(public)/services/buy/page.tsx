@@ -71,8 +71,7 @@ export default function BuyPropertyPage() {
           color: 'primary.contrastText',
           py: 8,
           position: 'relative',
-          backgroundImage:
-            'url("https://robohash.org/buying-hero?set=set4&bgset=&size=400x400")',
+          backgroundImage: 'url("/images/services-buy-bg.jpg")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           '&::before': {
@@ -82,7 +81,7 @@ export default function BuyPropertyPage() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
           },
         }}
       >
@@ -156,12 +155,10 @@ export default function BuyPropertyPage() {
           <Grid item xs={12} md={6}>
             <Box
               component="img"
-              src="https://robohash.org/buy-service?set=set4&bgset=&size=500x500"
+              src="/images/house-search.svg"
               alt="Happy family buying home"
               sx={{
                 width: '100%',
-                borderRadius: 2,
-                boxShadow: 3,
               }}
             />
           </Grid>

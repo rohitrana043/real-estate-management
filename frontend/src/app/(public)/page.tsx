@@ -104,8 +104,7 @@ export default function Home() {
       title: 'Luxury Villa with Ocean View',
       location: 'Miami Beach, FL',
       price: '$2,500,000',
-      image:
-        'https://robohash.org/1506c073d8abb8d10b5b079b0dab48ef?set=set4&bgset=&size=400x400',
+      image: '/images/properties/toronto-apartment.jpg',
       beds: 5,
       baths: 4,
       sqft: 4200,
@@ -114,8 +113,7 @@ export default function Home() {
       title: 'Modern Downtown Apartment',
       location: 'New York, NY',
       price: '$1,200,000',
-      image:
-        'https://robohash.org/1506c073d8abb8d10b5b079b0dab48ef?set=set4&bgset=&size=400x400',
+      image: '/images/properties/new-york-apartment.jpg',
       beds: 2,
       baths: 2,
       sqft: 1500,
@@ -124,8 +122,7 @@ export default function Home() {
       title: 'Suburban Family Home',
       location: 'Austin, TX',
       price: '$750,000',
-      image:
-        'https://robohash.org/1506c073d8abb8d10b5b079b0dab48ef?set=set4&bgset=&size=400x400',
+      image: '/images/properties/downtown-apartment.jpg',
       beds: 4,
       baths: 3,
       sqft: 2800,
@@ -139,8 +136,7 @@ export default function Home() {
       comment:
         'The team made my first home purchase incredibly smooth. Their expertise and guidance were invaluable.',
       rating: 5,
-      avatar:
-        'https://robohash.org/1506c073d8abb8d10b5b079b0dab48ef?set=set4&bgset=&size=400x400',
+      avatar: '/images/male-profile-pic.svg',
     },
     {
       name: 'Michael Chen',
@@ -148,8 +144,7 @@ export default function Home() {
       comment:
         'Their market analysis helped me make informed investment decisions. Highly recommend their services.',
       rating: 5,
-      avatar:
-        'https://robohash.org/1506c073d8abb8d10b5b079b0dab48ef?set=set4&bgset=&size=400x400',
+      avatar: '/images/female-profile-pic.svg',
     },
   ];
 
@@ -170,7 +165,7 @@ export default function Home() {
           pt: 8,
           pb: 12,
           backgroundImage:
-            'linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url("")',
+            'linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url("/images/hero-bg.jpg")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}

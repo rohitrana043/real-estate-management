@@ -44,6 +44,20 @@ import {
 } from 'react-beautiful-dnd';
 // Note: You would need to install 'react-beautiful-dnd' package for the image reordering functionality
 // Create a validation schema that matches PropertyDTO interface
+const zipCodeValidation = (value: string) => {
+  const usaPattern = /^\d{5}(-\d{4})?$/;
+  const canadaPattern = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
+  const indiaPattern = /^\d{6}$/;
+  if (!value) {
+    return false;
+  }
+  const formattedValue = value.toString().trim();
+  return (
+    usaPattern.test(formattedValue) ||
+    canadaPattern.test(formattedValue) ||
+    indiaPattern.test(formattedValue)
+  );
+};
 const schema = yup.object().shape({
   title: yup
     .string()
@@ -91,8 +105,11 @@ const schema = yup.object().shape({
   zipCode: yup
     .string()
     .required('Zip code is required')
-    .matches(/^\d{5}(-\d{4})?$/, 'Invalid zip code format'),
-  // Add optional fields that exist in PropertyDTO but aren't required in the form
+    .test(
+      'valid-postal-code',
+      'Invalid postal/ZIP code format.',
+      zipCodeValidation
+    ),
   id: yup.number().optional(),
   images: yup.array().optional(),
 }) as yup.ObjectSchema<PropertyDTO>;

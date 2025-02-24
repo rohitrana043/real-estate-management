@@ -10,7 +10,6 @@ import {
   Typography,
   Link,
   IconButton,
-  Divider,
   Stack,
   Button,
   TextField,
@@ -27,12 +26,14 @@ import {
   Phone,
   Email,
   ArrowForward,
+  Language,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useSettings } from '@/contexts/SettingsContext';
 import { translations } from '@/translations';
 import { validateEmail } from '@/lib/validation/newsletter';
 import newsletterApi from '@/lib/api/newsletter';
+import CommonFooter from './CommonFooter';
 
 export default function Footer() {
   const router = useRouter();
@@ -61,10 +62,31 @@ export default function Footer() {
   ];
 
   const socialLinks = [
-    { icon: <Facebook />, href: 'https://facebook.com', label: 'Facebook' },
-    { icon: <Twitter />, href: 'https://twitter.com', label: 'Twitter' },
-    { icon: <Instagram />, href: 'https://instagram.com', label: 'Instagram' },
-    { icon: <LinkedIn />, href: 'https://linkedin.com', label: 'LinkedIn' },
+    {
+      icon: <Facebook />,
+      href: 'https://facebook.com/rohitrana044',
+      label: 'Facebook',
+    },
+    {
+      icon: <Twitter />,
+      href: 'https://twitter.com/rohitrana043',
+      label: 'Twitter',
+    },
+    {
+      icon: <Instagram />,
+      href: 'https://instagram.com/rohit_rana043',
+      label: 'Instagram',
+    },
+    {
+      icon: <LinkedIn />,
+      href: 'https://linkedin.com/in/rohitrana043',
+      label: 'LinkedIn',
+    },
+    {
+      icon: <Language />,
+      href: 'https://rohitrana.dev',
+      label: 'Portfolio',
+    },
   ];
 
   const handleNavigation = (path: string) => {
@@ -288,7 +310,7 @@ export default function Footer() {
               <Stack direction="row" spacing={1} alignItems="center">
                 <LocationOn color="primary" />
                 <Typography variant="body2" color="text.secondary">
-                  123 Real Estate St, City, Country
+                  North York, ON M2J 1L6
                 </Typography>
               </Stack>
             </Grid>
@@ -296,7 +318,7 @@ export default function Footer() {
               <Stack direction="row" spacing={1} alignItems="center">
                 <Phone color="primary" />
                 <Typography variant="body2" color="text.secondary">
-                  +1 234 567 8900
+                  +1 905 325 9059
                 </Typography>
               </Stack>
             </Grid>
@@ -304,21 +326,14 @@ export default function Footer() {
               <Stack direction="row" spacing={1} alignItems="center">
                 <Email color="primary" />
                 <Typography variant="body2" color="text.secondary">
-                  info@realestate.com
+                  connect@rohitrana.dev
                 </Typography>
               </Stack>
             </Grid>
           </Grid>
         </Box>
 
-        {/* Copyright */}
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
-          <Divider sx={{ mb: 2 }} />
-          <Typography variant="body2" color="text.secondary">
-            © {new Date().getFullYear()} RealEstate.{' '}
-            {t.footer.allRightsReserved}
-          </Typography>
-        </Box>
+        <CommonFooter />
       </Container>
     </Box>
   );

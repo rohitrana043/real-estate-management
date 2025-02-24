@@ -1,0 +1,81 @@
+# application.yml
+server:
+  port: 8086
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+
+spring:
+  application:
+    name: contact-service
+
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/real_estate_contact
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:sqluser}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Email Configuration
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:rohit.rana043@gmail.com}
+    password: ${MAIL_PASSWORD:'pghq iwfy llez sewd'}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          timeout: 5000
+          connectiontimeout: 5000
+          writetimeout: 5000
+
+# Eureka Configuration
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://admin:admin123@localhost:8761/eureka/
+    fetchRegistry: true
+    registerWithEureka: true
+  instance:
+    instance-id: ${spring.application.name}:${random.uuid}
+    preferIpAddress: false
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+    tryItOutEnabled: true
+  show-actuator: false
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    com.realestate.contact: DEBUG
+    org.springframework.web: INFO
+    org.hibernate: INFO

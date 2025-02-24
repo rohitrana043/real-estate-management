@@ -104,6 +104,9 @@ export const translations = {
       phone: 'Phone',
       email: 'Email',
       address: 'Address',
+      privacy: 'Privacy Policy',
+      terms: `Terms of Service`,
+      unsubscribe: `Unsubscribe`,
     },
     newsletter: {
       emailLabel: 'Email Address',
@@ -216,6 +219,9 @@ export const translations = {
       phone: 'Téléphone',
       email: 'Email',
       address: 'Adresse',
+      privacy: `politique de confidentialité`,
+      terms: `Conditions d'utilisation`,
+      unsubscribe: `Se désabonner`,
     },
     newsletter: {
       emailLabel: 'Adresse email',

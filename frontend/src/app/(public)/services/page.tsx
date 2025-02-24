@@ -37,7 +37,7 @@ export default function ServicesPage() {
       description:
         'Find your dream home with our expert guidance every step of the way.',
       icon: <HouseIcon sx={{ fontSize: 60, color: 'primary.main' }} />,
-      image: 'https://robohash.org/buying?set=set4&bgset=&size=400x300',
+      image: '/images/services-buy.svg',
       link: '/services/buy',
       features: [
         'Personalized property searches based on your needs',
@@ -50,7 +50,7 @@ export default function ServicesPage() {
       title: 'Selling Property',
       description: `Maximize your property's value with our strategic marketing and sales approach.`,
       icon: <SellIcon sx={{ fontSize: 60, color: 'primary.main' }} />,
-      image: 'https://robohash.org/selling?set=set4&bgset=&size=400x300',
+      image: '/images/services-sell.svg',
       link: '/services/sell',
       features: [
         'Professional property valuation and market analysis',
@@ -64,7 +64,7 @@ export default function ServicesPage() {
       description:
         'Find perfect rental properties or trusted tenants for your investment.',
       icon: <ApartmentIcon sx={{ fontSize: 60, color: 'primary.main' }} />,
-      image: 'https://robohash.org/renting?set=set4&bgset=&size=400x300',
+      image: '/images/services-rental.svg',
       link: '/services/rent',
       features: [
         'Extensive database of rental properties',
@@ -78,7 +78,7 @@ export default function ServicesPage() {
       description:
         'Make informed decisions with our comprehensive real estate market insights.',
       icon: <AssessmentIcon sx={{ fontSize: 60, color: 'primary.main' }} />,
-      image: 'https://robohash.org/analysis?set=set4&bgset=&size=400x300',
+      image: '/images/services-analysis.svg',
       link: '/services/analysis',
       features: [
         'Detailed neighborhood and property value analysis',
@@ -105,24 +105,37 @@ export default function ServicesPage() {
       {/* Hero Section */}
       <Box
         sx={{
-          bgcolor: 'primary.main',
-          color: 'primary.contrastText',
-          py: 8,
-          textAlign: 'center',
+          bgcolor: 'background.paper',
+          position: 'relative',
+          pt: 8,
+          pb: 12,
+          backgroundImage:
+            'linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url("/images/services-bg.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
         <Container maxWidth="md">
-          <Typography
-            variant="h2"
-            component="h1"
-            gutterBottom
-            fontWeight="bold"
+          <Box
+            sx={{
+              maxWidth: 800,
+              mx: 'auto',
+              textAlign: 'center',
+              color: 'white',
+            }}
           >
-            Our Services
-          </Typography>
-          <Typography variant="h5" sx={{ mb: 4 }}>
-            Comprehensive Real Estate Solutions Tailored to Your Needs
-          </Typography>
+            <Typography
+              variant="h2"
+              component="h1"
+              gutterBottom
+              fontWeight="bold"
+            >
+              Our Services
+            </Typography>
+            <Typography variant="h5" sx={{ mb: 4 }}>
+              Comprehensive Real Estate Solutions Tailored to Your Needs
+            </Typography>
+          </Box>
         </Container>
       </Box>
 
@@ -134,7 +147,11 @@ export default function ServicesPage() {
               <Card sx={{ display: { md: 'flex' }, mb: 4 }}>
                 <CardMedia
                   component="img"
-                  sx={{ width: { md: 300 }, height: { xs: 240, md: 'auto' } }}
+                  sx={{
+                    objectFit: 'contain',
+                    width: { md: 300 },
+                    height: { xs: 240, md: 'auto' },
+                  }}
                   image={service.image}
                   alt={service.title}
                 />

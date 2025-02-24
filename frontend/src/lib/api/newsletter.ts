@@ -21,7 +21,7 @@ const newsletterApi = {
    */
   subscribe: async (email: string): Promise<NewsletterResponse> => {
     try {
-      const response = await axiosInstance.post('/contact/newsletter', {
+      const response = await axiosInstance.post('/newsletter/subscribe', {
         email,
       });
       return response.data;
@@ -53,11 +53,7 @@ const newsletterApi = {
   ): Promise<NewsletterResponse> => {
     try {
       const response = await axiosInstance.post(
-        '/contact/newsletter/unsubscribe',
-        {
-          email,
-          token,
-        }
+        `/newsletter/unsubscribe?token=${token}`
       );
       return response.data;
     } catch (error) {
@@ -87,7 +83,7 @@ const newsletterApi = {
   ): Promise<{ success: boolean; email: string }> => {
     try {
       const response = await axiosInstance.get(
-        `/contact/newsletter/verify?token=${token}`
+        `/newsletter/verify?token=${token}`
       );
       return response.data;
     } catch (error) {

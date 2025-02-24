@@ -19,6 +19,20 @@ public class GatewayConfig {
                                         .setName("authCircuitBreaker")
                                         .setFallbackUri("forward:/fallback/auth")))
                         .uri("lb://user-service"))
+                .route("contact-service", r -> r
+                        .path("/api/contacts/**", "/contacts/**")
+                        .filters(f -> f
+                                .circuitBreaker(config -> config
+                                        .setName("contactCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/contact")))
+                        .uri("lb://contact-service"))
+                .route("contact-service", r -> r
+                        .path("/api/newsletter/**", "/newsletter/**")
+                        .filters(f -> f
+                                .circuitBreaker(config -> config
+                                        .setName("newsletterCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/contact")))
+                        .uri("lb://contact-service"))
                 .route("property-service", r -> r
                         .path("/api/properties/**")
                         .filters(f -> f

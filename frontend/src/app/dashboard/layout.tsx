@@ -2,10 +2,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
+import CommonFooter from '@/components/layout/CommonFooter';
 
 export default function DashboardLayout({
   children,
@@ -68,9 +69,7 @@ export default function DashboardLayout({
             borderTop: (theme) => `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Typography variant="body2" color="text.secondary" align="center">
-            © {new Date().getFullYear()} RealEstate. All rights reserved.
-          </Typography>
+          <CommonFooter />
         </Box>
       </Box>
     </Box>

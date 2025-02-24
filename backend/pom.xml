@@ -35,6 +35,7 @@
 		<module>user-service</module>
 <!--		<module>transaction-service</module>-->
 		<module>analytics-service</module>
+		<module>contact-service</module>
 	</modules>
 
 	<properties>

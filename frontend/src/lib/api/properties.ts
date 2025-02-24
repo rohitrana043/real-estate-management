@@ -14,41 +14,24 @@ const PROPERTIES_ENDPOINT = '/properties';
 export const getProperties = async (
   page = 0,
   size = 10,
-  sort = ['id', 'desc']
+  sort: string[] = ['createdAt,desc']
 ): Promise<PagePropertyDTO> => {
   const response = await axiosInstance.get(PROPERTIES_ENDPOINT, {
-    // params: { page, size, sort },
+    params: {
+      page,
+      size,
+      sort: sort.join(','),
+    },
   });
   return response.data;
 };
 
 export const getProperty = async (id: number): Promise<PropertyDTO> => {
   try {
-    // Debug log before request
-    console.log('Fetching property details:', {
-      id,
-      endpoint: `${PROPERTIES_ENDPOINT}/${id}`,
-      token: localStorage.getItem('token'),
-    });
     const token = localStorage.getItem('token');
-    const response = await axiosInstance.get(`${PROPERTIES_ENDPOINT}/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    // Debug log after successful response
-    console.log('Property details response:', response.data);
-
+    const response = await axiosInstance.get(`${PROPERTIES_ENDPOINT}/${id}`);
     return response.data;
   } catch (error: any) {
-    // Detailed error logging
-    console.error('Error fetching property:', {
-      error: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      config: error.config,
-    });
     throw error;
   }
 };
@@ -57,14 +40,14 @@ export const searchProperties = async (
   criteria: PropertySearchCriteria,
   page = 0,
   size = 10,
-  sort = ['id', 'desc']
+  sort: string[] = ['createdAt,desc']
 ): Promise<PagePropertyDTO> => {
   const response = await axiosInstance.get(`${PROPERTIES_ENDPOINT}/search`, {
     params: {
       ...criteria,
       page,
       size,
-      sort,
+      sort: sort.join(','),
     },
   });
   return response.data;

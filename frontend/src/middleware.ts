@@ -28,15 +28,19 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value;
   const { pathname } = request.nextUrl;
 
-  // Special handling for properties routes
+  // Handle property detail routes separately (protected)
   if (pathname.startsWith('/properties/')) {
-    // Protected route - requires authentication
     if (!token) {
-      console.log('Redirecting to login from protected property route');
+      console.log('Redirecting to login from protected property detail route');
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('from', pathname);
       return NextResponse.redirect(loginUrl);
     }
+    return NextResponse.next();
+  }
+
+  // Main properties listing page is public
+  if (pathname === '/properties') {
     return NextResponse.next();
   }
 
@@ -51,10 +55,7 @@ export function middleware(request: NextRequest) {
   // Check if the current path is one of the public paths
   const isPublicPath =
     publicPaths.includes(pathname) ||
-    publicPaths.some(
-      (path) => path !== '/' && pathname.startsWith(`${path}/`)
-    ) ||
-    pathname === '/properties';
+    publicPaths.some((path) => path !== '/' && pathname.startsWith(`${path}/`));
 
   // If user is logged in and tries to access auth pages, redirect to dashboard
   if (token && isAuthPath) {

@@ -40,8 +40,8 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterDTO registerDTO) {
         logger.info("Received registration request for user: {}", registerDTO.getEmail());
-        logger.debug("Registration details: {}", registerDTO);
         registerDTO.setRole("ROLE_CLIENT");
+        logger.debug("Registration details: {}", registerDTO);
         String result = authService.register(registerDTO);
         logger.info("Registration completed for user: {}", registerDTO.getEmail());
         return ResponseEntity.ok(result);

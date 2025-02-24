@@ -144,11 +144,13 @@ const authApi = {
 
   changePassword: async (
     currentPassword: string,
-    newPassword: string
+    newPassword: string,
+    confirmPassword: string
   ): Promise<void> => {
-    await axiosInstance.post('/users/profile/change-password', {
+    await axiosInstance.post('/users/change-password', {
       currentPassword,
       newPassword,
+      confirmPassword,
     });
   },
 

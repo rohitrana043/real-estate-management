@@ -30,9 +30,11 @@ public class SecurityConfig {
                                 "/api/public/**",
                                 "/api/docs/**",
                                 "/api/auth/**",
+                                "/api/contacts/**",
+                                "/api/newsletter/**",
                                 "/api/account/verify/**",
                                 "/api/properties",
-//                                "/api/properties/**",
+                                "/api/properties/search",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/eureka/**").permitAll()

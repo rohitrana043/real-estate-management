@@ -95,6 +95,10 @@ export default function PropertyDetailPage() {
 
         const propertyData = await getProperty(Number(params.id));
         setProperty(propertyData);
+        // Set the first image as the default selected image
+        if (propertyData.images && propertyData.images.length > 0) {
+          setSelectedImage(propertyData.images[0].url);
+        }
       } catch (err: any) {
         console.error('Error fetching property details:', err);
 
@@ -700,7 +704,7 @@ export default function PropertyDetailPage() {
                       sx={{
                         height: 180,
                         backgroundColor: 'neutral.main',
-                        backgroundImage: `url('/placeholder-image.jpg')`,
+                        backgroundImage: `url('/images/properties/property-placeholder.jpg')`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         position: 'relative',

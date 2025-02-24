@@ -44,7 +44,7 @@ export default function MarketAnalysisPage() {
       icon: <AssessmentIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
       description:
         'Detailed analysis of market trends, property values, and future projections for specific neighborhoods or property types.',
-      image: 'https://robohash.org/market-report?set=set4&bgset=&size=400x300',
+      image: '/images/servies-market-report.svg',
       features: [
         'Price trend analysis by neighborhood',
         'Supply and demand metrics',
@@ -57,8 +57,7 @@ export default function MarketAnalysisPage() {
       icon: <TrendingUpIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
       description:
         'Evaluation of potential investment properties with ROI projections, risk assessment, and growth potential.',
-      image:
-        'https://robohash.org/investment-analysis?set=set4&bgset=&size=400x300',
+      image: '/images/services-investment-analysis.svg',
       features: [
         'Cash flow projections',
         'Appreciation potential',
@@ -71,8 +70,7 @@ export default function MarketAnalysisPage() {
       icon: <SearchIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
       description:
         'Strategic insights for buyers and sellers to make informed decisions based on current market conditions.',
-      image:
-        'https://robohash.org/market-intelligence?set=set4&bgset=&size=400x300',
+      image: '/images/services-market-intelligence.svg',
       features: [
         'Pricing strategy recommendations',
         'Negotiation leverage points',
@@ -85,8 +83,7 @@ export default function MarketAnalysisPage() {
       icon: <PeopleIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
       description:
         'Understanding population trends, community profiles, and lifestyle patterns that impact property values.',
-      image:
-        'https://robohash.org/demographic-analysis?set=set4&bgset=&size=400x300',
+      image: '/images/services-demographic-analysis.svg',
       features: [
         'Population growth projections',
         'Income and employment trends',
@@ -105,8 +102,7 @@ export default function MarketAnalysisPage() {
           color: 'primary.contrastText',
           py: 8,
           position: 'relative',
-          backgroundImage:
-            'url("https://robohash.org/analysis-hero?set=set4&bgset=&size=400x400")',
+          backgroundImage: 'url("/images/services-analysis-bg.jpg")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           '&::before': {
@@ -116,7 +112,7 @@ export default function MarketAnalysisPage() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
           },
         }}
       >
@@ -193,12 +189,10 @@ export default function MarketAnalysisPage() {
           <Grid item xs={12} md={6}>
             <Box
               component="img"
-              src="https://robohash.org/market-analysis?set=set4&bgset=&size=500x500"
+              src="/images/services-analysis-hero.svg"
               alt="Market analysis charts"
               sx={{
                 width: '100%',
-                borderRadius: 2,
-                boxShadow: 3,
               }}
             />
           </Grid>
@@ -241,6 +235,7 @@ export default function MarketAnalysisPage() {
                     height="200"
                     image={service.image}
                     alt={service.title}
+                    sx={{ margin: 'auto', width: 'auto' }}
                   />
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -458,22 +453,19 @@ export default function MarketAnalysisPage() {
               title: 'Neighborhood Market Trend Report',
               description:
                 'Detailed analysis of price trends, inventory levels, days on market, and comparative metrics for specific neighborhoods.',
-              image:
-                'https://robohash.org/trend-report?set=set4&bgset=&size=400x300',
+              image: '/images/servies-market-report.svg',
             },
             {
               title: 'Investment Property Analysis',
               description:
                 'Comprehensive evaluation of potential rental properties with cash flow projections, appreciation forecasts, and risk assessments.',
-              image:
-                'https://robohash.org/investment-report?set=set4&bgset=&size=400x300',
+              image: '/images/services-demographic-analysis.svg',
             },
             {
               title: "Seller's Advantage Report",
               description:
                 'Strategic pricing analysis, buyer demand evaluation, and marketing recommendations to maximize property value.',
-              image:
-                'https://robohash.org/seller-report?set=set4&bgset=&size=400x300',
+              image: '/images/services-market-intelligence.svg',
             },
           ].map((report, index) => (
             <Grid item xs={12} key={index}>
@@ -484,7 +476,8 @@ export default function MarketAnalysisPage() {
                       sx={{
                         height: { xs: 200, sm: '100%' },
                         backgroundImage: `url(${report.image})`,
-                        backgroundSize: 'cover',
+                        backgroundSize: 'contain',
+                        backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'center',
                       }}
                     />

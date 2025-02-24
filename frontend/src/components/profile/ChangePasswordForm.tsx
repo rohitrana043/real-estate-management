@@ -69,7 +69,11 @@ export default function ChangePasswordForm() {
     setIsSubmitting(true);
     try {
       // Use the changePassword method from authApi
-      await authApi.changePassword(data.currentPassword, data.newPassword);
+      await authApi.changePassword(
+        data.currentPassword,
+        data.newPassword,
+        data.confirmPassword
+      );
 
       enqueueSnackbar('Password changed successfully', { variant: 'success' });
 

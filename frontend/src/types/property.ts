@@ -1,8 +1,5 @@
 // src/types/property.ts
 
-export type PropertyType = 'APARTMENT' | 'HOUSE' | 'COMMERCIAL';
-export type PropertyStatus = 'AVAILABLE' | 'SOLD' | 'RENTED';
-
 export interface ImageDTO {
   id: number;
   name: string;
@@ -55,13 +52,74 @@ export interface PropertySearchCriteria {
 }
 
 export interface PagePropertyDTO {
+  content: PropertyDTO[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+    sort: {
+      empty: boolean;
+      sorted: boolean;
+      unsorted: boolean;
+    };
+  };
   totalPages: number;
   totalElements: number;
   size: number;
-  content: PropertyDTO[];
   number: number;
   first: boolean;
   last: boolean;
-  numberOfElements: number;
   empty: boolean;
+}
+
+export interface SortOption {
+  label: string;
+  value: string;
+  field: string;
+  direction: 'asc' | 'desc';
+}
+
+export interface PropertySearchCriteria {
+  keyword?: string;
+  type?: PropertyType;
+  status?: PropertyStatus;
+  minPrice?: number;
+  maxPrice?: number;
+  minBedrooms?: number;
+  maxBedrooms?: number;
+  minBathrooms?: number;
+  maxBathrooms?: number;
+  city?: string;
+  state?: string;
+}
+
+export interface FilterState {
+  type: string;
+  status: string;
+  bedrooms: string;
+  bathrooms: string;
+  priceRange: [number, number];
+}
+
+export const DEFAULT_PRICE_RANGE: [number, number] = [0, 2000000];
+
+export const DEFAULT_FILTERS: FilterState = {
+  type: 'all',
+  status: 'all',
+  bedrooms: 'all',
+  bathrooms: 'all',
+  priceRange: DEFAULT_PRICE_RANGE,
+};
+
+export enum PropertyType {
+  APARTMENT = 'APARTMENT',
+  HOUSE = 'HOUSE',
+  COMMERCIAL = 'COMMERCIAL',
+  CONDO = 'CONDO',
+  SPECIAL = 'SPECIAL',
+}
+
+export enum PropertyStatus {
+  AVAILABLE = 'AVAILABLE',
+  SOLD = 'SOLD',
+  RENTED = 'RENTED',
 }

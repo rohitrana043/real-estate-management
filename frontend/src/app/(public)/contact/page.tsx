@@ -163,24 +163,37 @@ export default function ContactPage() {
       {/* Hero Section */}
       <Box
         sx={{
-          bgcolor: 'primary.main',
-          color: 'primary.contrastText',
-          py: 8,
-          textAlign: 'center',
+          bgcolor: 'background.paper',
+          position: 'relative',
+          pt: 8,
+          pb: 12,
+          backgroundImage:
+            'linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url("/images/contact-bg.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
         <Container maxWidth="md">
-          <Typography
-            variant="h2"
-            component="h1"
-            gutterBottom
-            fontWeight="bold"
+          <Box
+            sx={{
+              maxWidth: 800,
+              mx: 'auto',
+              textAlign: 'center',
+              color: 'white',
+            }}
           >
-            Contact Us
-          </Typography>
-          <Typography variant="h5" sx={{ mb: 4 }}>
-            We're Here to Help You with All Your Real Estate Needs
-          </Typography>
+            <Typography
+              variant="h2"
+              component="h1"
+              gutterBottom
+              fontWeight="bold"
+            >
+              Contact Us
+            </Typography>
+            <Typography variant="h5" sx={{ mb: 4 }}>
+              We're Here to Help You with All Your Real Estate Needs
+            </Typography>
+          </Box>
         </Container>
       </Box>
 
@@ -296,11 +309,11 @@ export default function ContactPage() {
                           onChange={handleSelectChange}
                           onBlur={() => handleBlur('inquiryType')}
                         >
-                          <MenuItem value="general">General Inquiry</MenuItem>
-                          <MenuItem value="buying">Buying Property</MenuItem>
-                          <MenuItem value="selling">Selling Property</MenuItem>
-                          <MenuItem value="renting">Renting Property</MenuItem>
-                          <MenuItem value="investment">
+                          <MenuItem value="GENERAL">General Inquiry</MenuItem>
+                          <MenuItem value="BUYING">Buying Property</MenuItem>
+                          <MenuItem value="SELLING">Selling Property</MenuItem>
+                          <MenuItem value="RENTING">Renting Property</MenuItem>
+                          <MenuItem value="INVESTMENT">
                             Investment Opportunity
                           </MenuItem>
                         </Select>

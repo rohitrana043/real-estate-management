@@ -73,7 +73,7 @@ const PropertyCard = ({
   };
 
   // Default placeholder image
-  const defaultImage = '/images/property-placeholder.jpg';
+  const defaultImage = '/images/properties/property-placeholder.jpg';
 
   // Get main image or first image or default
   const getMainImage = () => {

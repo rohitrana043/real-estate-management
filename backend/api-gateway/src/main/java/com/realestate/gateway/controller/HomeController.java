@@ -28,7 +28,7 @@ public class HomeController {
         // Add your API endpoints and their descriptions
         apiEndpoints.put("/api/properties", "Property Management APIs Documentation: http://localhost:8081/api-docs");
         apiEndpoints.put("/api/users", "User Management and Auth APIs Documentation: http://localhost:8082/api-docs");
-//        apiEndpoints.put("/api/transactions", "Transactions APIs Documentation: http://localhost:8081/api-docs");
+        apiEndpoints.put("/api/contact", "Contact APIs Documentation: http://localhost:8086/api-docs");
         apiEndpoints.put("/api/analytics", "Analytics APIs Documentation: http://localhost:8084/api-docs");
         // Add more endpoints as needed
 

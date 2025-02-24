@@ -29,19 +29,11 @@ public class JwtAuthenticationConverter implements ServerAuthenticationConverter
         String path = exchange.getRequest().getPath().value();
         String method = exchange.getRequest().getMethod().name();
 
-        logger.debug("Request details:");
-        logger.debug("Path: {}", path);
-        logger.debug("Method: {}", method);
-        logger.debug("Headers: {}", exchange.getRequest().getHeaders());
-        logger.debug("Authorization header: {}", authHeader);
-
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            logger.debug("No Bearer token found in Authorization header");
             return Mono.empty();
         }
 
         String token = authHeader.substring(7);
-        logger.debug("JWT token extracted, attempting validation");
 
         try {
             String username = Jwts.parserBuilder()
@@ -51,8 +43,6 @@ public class JwtAuthenticationConverter implements ServerAuthenticationConverter
                     .getBody()
                     .getSubject();
 
-            logger.debug("JWT token validated successfully for user: {}", username);
-
             Authentication auth = new UsernamePasswordAuthenticationToken(
                     username,
                     null,
@@ -60,7 +50,6 @@ public class JwtAuthenticationConverter implements ServerAuthenticationConverter
             );
             return Mono.just(auth);
         } catch (Exception e) {
-            logger.error("JWT validation failed: {}", e.getMessage());
             return Mono.empty();
         }
     }

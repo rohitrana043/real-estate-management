@@ -28,7 +28,7 @@ export const contactFormSchema = yup.object({
   inquiryType: yup
     .string()
     .oneOf(
-      ['general', 'buying', 'selling', 'renting', 'investment'],
+      ['GENERAL', 'BUYING', 'SELLING', 'RENTING', 'INVESTMENT'],
       'Please select a valid inquiry type'
     )
     .optional(),
