@@ -14,7 +14,7 @@ export interface ImageDTO {
 }
 
 export interface PropertyDTO {
-  id?: number;
+  id: number;
   title: string;
   description: string;
   type: PropertyType;
@@ -30,6 +30,8 @@ export interface PropertyDTO {
   images?: ImageDTO[];
   createdAt: string;
   updatedAt: string;
+  favorite: boolean;
+  favoriteCount: number;
 }
 
 export interface PropertySearchCriteria {
@@ -116,6 +118,7 @@ export enum PropertyType {
   APARTMENT = 'APARTMENT',
   HOUSE = 'HOUSE',
   COMMERCIAL = 'COMMERCIAL',
+  CONDO = 'CONDO',
 }
 
 export enum PropertyStatus {

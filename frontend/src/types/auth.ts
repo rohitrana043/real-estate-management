@@ -63,6 +63,7 @@ export interface RefreshTokenRequest {
 }
 
 export interface LoginResponseDTO extends TokenResponse {
+  token: string;
   user: UserDTO;
 }
 

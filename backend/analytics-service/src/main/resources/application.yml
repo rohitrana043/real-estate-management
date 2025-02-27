@@ -3,6 +3,14 @@ spring:
     name: analytics-service
   profiles:
     active: prod
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=30m
+
+services:
+  property:
+    url: http://localhost:8081
 
 
 #Swagger/OpenAPI Configuration

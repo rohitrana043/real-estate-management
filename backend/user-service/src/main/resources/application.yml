@@ -7,8 +7,8 @@ app:
   frontend-url: http://localhost:3000 # If you have a separate frontend
   email:
     from: noreply@realestate.com
-    verification-url: ${app.url}/api/account/verify
-    password-reset-url: ${app.url}/api/account/password/reset
+    verification-url: ${app.frontend-url}/verify-email
+    password-reset-url: ${app.frontend-url}/account/password/reset
 
 spring:
   application:
@@ -27,8 +27,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: rohit.rana043@gmail.com
-    password: 'zwfn dsym eivz ibyf'
+    username: youremail@example.com
+    password: yourpassword
     properties:
       mail:
         smtp:
@@ -37,7 +37,7 @@ spring:
             enable: true
 
 jwt:
-  secret: '5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437'
+  secret: yoursecret
   expiration: 900000 # 15 minutes in milliseconds
   refresh:
     expiration: 604800000 # 7 days in milliseconds

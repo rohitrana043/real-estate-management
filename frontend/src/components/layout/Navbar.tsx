@@ -27,7 +27,8 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import TranslateIcon from '@mui/icons-material/Translate';
 import SettingsIcon from '@mui/icons-material/Settings';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import { hasRole } from '@/utils/roleUtils';
+import { dashboardRoutes } from '@/config/dashboardRoutes';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -72,15 +73,6 @@ export default function Navbar() {
     { title: t.common.about, path: '/about' },
     { title: t.common.contact, path: '/contact' },
   ];
-
-  console.log('Auth State:', {
-    isAuthenticated,
-    user,
-    userInStorage:
-      typeof window !== 'undefined' ? localStorage.getItem('user') : null,
-    tokenInStorage:
-      typeof window !== 'undefined' ? localStorage.getItem('token') : null,
-  });
 
   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -303,6 +295,28 @@ export default function Navbar() {
                         {t.common.dashboard}
                       </Typography>
                     </MenuItem>,
+                    ...dashboardRoutes
+                      .filter(
+                        (route) =>
+                          route.roles.some((role) => hasRole(user, role)) &&
+                          route.path !== '/dashboard'
+                      )
+                      .map((route) => (
+                        <MenuItem
+                          key={route.path}
+                          onClick={() => {
+                            handleCloseNavMenu();
+                            router.push(route.path);
+                          }}
+                        >
+                          <ListItemIcon>
+                            <route.icon fontSize="small" />
+                          </ListItemIcon>
+                          <Typography textAlign="center">
+                            {route.title}
+                          </Typography>
+                        </MenuItem>
+                      )),
                     <MenuItem key="logout" onClick={handleLogout}>
                       <ListItemIcon>
                         <LogoutIcon fontSize="small" />
@@ -543,6 +557,26 @@ export default function Navbar() {
                     </ListItemIcon>
                     <ListItemText>{t.common.dashboard}</ListItemText>
                   </MenuItem>
+                  {dashboardRoutes
+                    .filter(
+                      (route) =>
+                        route.roles.some((role) => hasRole(user, role)) &&
+                        route.path !== '/dashboard'
+                    )
+                    .map((route) => (
+                      <MenuItem
+                        key={route.path}
+                        onClick={() => {
+                          handleCloseUserMenu();
+                          router.push(route.path);
+                        }}
+                      >
+                        <ListItemIcon>
+                          <route.icon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>{route.title}</ListItemText>
+                      </MenuItem>
+                    ))}
                   <Divider />
                   <MenuItem onClick={handleLogout}>
                     <ListItemIcon>

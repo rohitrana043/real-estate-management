@@ -34,10 +34,10 @@ eureka:
 aws:
   access:
     key:
-      id: your-id
+      id: yourid
   secret:
     access:
-      key: your-key
+      key: yourkey
   s3:
     region: ca-central-1
     bucket:

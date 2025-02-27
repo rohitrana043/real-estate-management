@@ -130,6 +130,21 @@ public class PropertyController {
     }
 
     @Operation(
+            summary = "Get similar properties",
+            description = "Retrieves properties similar to the specified property based on type, price range, and location"
+    )
+    @StandardResponses
+    @GetMapping("/{id}/similar")
+    public ResponseEntity<List<PropertyDTO>> getSimilarProperties(
+            @Parameter(description = "Property ID", required = true)
+            @PathVariable Long id,
+            @Parameter(description = "Maximum number of similar properties to return")
+            @RequestParam(defaultValue = "3") int limit) {
+        log.debug("REST request to get similar properties for Property : {}", id);
+        return ResponseEntity.ok(propertyService.getSimilarProperties(id, limit));
+    }
+
+    @Operation(
             summary = "Search properties with criteria",
             description = "Searches for properties based on various criteria with pagination and sorting options"
     )

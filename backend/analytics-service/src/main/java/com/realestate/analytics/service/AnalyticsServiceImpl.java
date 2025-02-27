@@ -1,6 +1,9 @@
 package com.realestate.analytics.service;
 
+import com.realestate.analytics.client.PropertiesServiceClient;
 import com.realestate.analytics.dto.AnalyticsDTO;
+import com.realestate.analytics.dto.PropertyDTO;
+import com.realestate.analytics.dto.PropertySearchResponse;
 import com.realestate.analytics.dto.PropertyTrendDTO;
 import com.realestate.analytics.model.Analytics;
 import com.realestate.analytics.model.PropertyTrend;
@@ -9,18 +12,18 @@ import com.realestate.analytics.repository.PropertyTrendRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,14 +32,21 @@ import java.util.stream.Collectors;
 public class AnalyticsServiceImpl implements AnalyticsService {
     private final AnalyticsRepository analyticsRepository;
     private final PropertyTrendRepository propertyTrendRepository;
+    private final PropertiesServiceClient propertiesClient;
 
     @Override
     @Transactional
     public AnalyticsDTO generateAnalytics(String city, String propertyType) {
+        log.info("Generating analytics for city: {} and property type: {}", city, propertyType);
+
         // Get previous analytics for comparison
-        List<Analytics> historicalData = analyticsRepository.findByCity(city);
+        List<Analytics> historicalData = analyticsRepository.findByCityAndPropertyType(city, propertyType);
         Analytics previousAnalytics = historicalData.isEmpty() ? null :
                 historicalData.get(historicalData.size() - 1);
+
+        // Fetch real property data
+        List<PropertyDTO> properties = fetchProperties(city, propertyType);
+        log.info("Fetched {} properties for analytics", properties.size());
 
         // Create new analytics
         Analytics analytics = new Analytics();
@@ -44,72 +54,81 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         analytics.setPropertyType(propertyType);
         analytics.setReportDate(LocalDateTime.now());
 
-        if (previousAnalytics != null) {
-            // Update based on previous data
-            analytics.setTotalProperties(previousAnalytics.getTotalProperties());
-            analytics.setAvailableProperties(previousAnalytics.getAvailableProperties());
-            analytics.setSoldProperties(
-                    previousAnalytics.getSoldProperties() +
-                            (previousAnalytics.getAvailableProperties() - analytics.getAvailableProperties())
-            );
+        // Calculate analytics from real property data
+        int totalProperties = properties.size();
+        int availableProperties = (int) properties.stream()
+                .filter(p -> "AVAILABLE".equals(p.getStatus()))
+                .count();
+        int soldProperties = (int) properties.stream()
+                .filter(p -> "SOLD".equals(p.getStatus()))
+                .count();
 
-            // Calculate new revenue based on average price and newly sold properties
-            BigDecimal newRevenue = previousAnalytics.getAveragePrice()
-                    .multiply(BigDecimal.valueOf(analytics.getSoldProperties() - previousAnalytics.getSoldProperties()));
-            analytics.setTotalRevenue(previousAnalytics.getTotalRevenue().add(newRevenue));
+        BigDecimal totalRevenue = properties.stream()
+                .filter(p -> "SOLD".equals(p.getStatus()))
+                .map(PropertyDTO::getPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal averagePrice;
+        if (soldProperties > 0) {
+            averagePrice = totalRevenue.divide(BigDecimal.valueOf(soldProperties), 2, RoundingMode.HALF_UP);
         } else {
-            // Initialize with default values for new city/property type
-            analytics.setTotalProperties(0);
-            analytics.setAvailableProperties(0);
-            analytics.setSoldProperties(0);
-            analytics.setTotalRevenue(BigDecimal.ZERO);
-            analytics.setAveragePrice(BigDecimal.ZERO);
+            averagePrice = properties.stream()
+                    .map(PropertyDTO::getPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .divide(BigDecimal.valueOf(Math.max(1, totalProperties)), 2, RoundingMode.HALF_UP);
         }
 
-        // Calculate average price
-        analytics.setAveragePrice(calculateAveragePrice(
-                analytics.getTotalRevenue(),
-                analytics.getSoldProperties()
-        ));
+        analytics.setTotalProperties(totalProperties);
+        analytics.setAvailableProperties(availableProperties);
+        analytics.setSoldProperties(soldProperties);
+        analytics.setTotalRevenue(totalRevenue);
+        analytics.setAveragePrice(averagePrice);
 
         Analytics savedAnalytics = analyticsRepository.save(analytics);
-        generatePropertyTrend(city, propertyType, savedAnalytics, previousAnalytics);
+        generatePropertyTrend(city, propertyType, savedAnalytics, previousAnalytics, properties);
 
         return convertToDTO(savedAnalytics);
     }
 
-    private Integer calculateTotalProperties(List<Analytics> historicalData) {
-        return historicalData.stream()
-                .mapToInt(Analytics::getTotalProperties)
-                .sum();
-    }
+    private List<PropertyDTO> fetchProperties(String city, String propertyType) {
+        log.debug("Fetching properties for city: {} and type: {}", city, propertyType);
 
-    private Integer calculateAvailableProperties(List<Analytics> historicalData) {
-        return historicalData.stream()
-                .mapToInt(Analytics::getAvailableProperties)
-                .sum();
-    }
+        try {
+            // Get all properties (we'll filter client-side)
+            PropertySearchResponse allProperties = propertiesClient.getAllProperties(0, 1000);
+            List<PropertyDTO> properties = allProperties.getContent();
 
-    private Integer calculateSoldProperties(List<Analytics> historicalData) {
-        return historicalData.stream()
-                .mapToInt(Analytics::getSoldProperties)
-                .sum();
-    }
+            if (properties.isEmpty()) {
+                log.warn("No properties found in the properties service");
+                return properties;
+            }
 
-    private BigDecimal calculateTotalRevenue(List<Analytics> historicalData) {
-        return historicalData.stream()
-                .map(Analytics::getTotalRevenue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private BigDecimal calculateAveragePrice(BigDecimal totalRevenue, Integer soldProperties) {
-        if (soldProperties == null || soldProperties == 0) {
-            return BigDecimal.ZERO;
+            // Filter properties by city and type
+            return properties.stream()
+                    .filter(p -> (city == null || city.isEmpty() || city.equalsIgnoreCase(p.getCity())))
+                    .filter(p -> (propertyType == null || propertyType.isEmpty() || propertyType.equalsIgnoreCase(p.getType())))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error fetching properties for city: {} and type: {}", city, propertyType, e);
+            return Collections.emptyList();
         }
-        return totalRevenue.divide(BigDecimal.valueOf(soldProperties), 2, RoundingMode.HALF_UP);
     }
+
     private void generatePropertyTrend(String city, String propertyType,
-                                       Analytics currentAnalytics, Analytics previousAnalytics) {
+                                       Analytics currentAnalytics, Analytics previousAnalytics,
+                                       List<PropertyDTO> properties) {
+        if (city == null || city.isEmpty()) {
+            log.warn("Cannot generate property trend with null city. Skipping trend generation.");
+            return;
+        }
+
+        if (propertyType == null || propertyType.isEmpty()) {
+            log.warn("Cannot generate property trend with null propertyType. Skipping trend generation.");
+            return;
+        }
+
+        log.debug("Generating property trend for city: {} and property type: {}", city, propertyType);
+
         PropertyTrend trend = new PropertyTrend();
         trend.setCity(city);
         trend.setPropertyType(propertyType);
@@ -127,10 +146,11 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             trend.setPriceChangePercentage(0.0);
         }
 
-        // Calculate demand score
-        trend.setDemandScore(calculateDemandScore(currentAnalytics));
+        // Calculate demand score based on available vs. sold properties
+        trend.setDemandScore(calculateDemandScore(properties));
 
         propertyTrendRepository.save(trend);
+        log.debug("Saved property trend for city: {} and property type: {}", city, propertyType);
     }
 
     private double calculatePriceChangePercentage(BigDecimal oldPrice, BigDecimal newPrice) {
@@ -141,34 +161,37 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .doubleValue();
     }
 
-//    private int calculateDemandScore(Analytics analytics) {
-//        if (analytics.getTotalProperties() == 0) return 0;
-//
-//        double soldRatio = (double) analytics.getSoldProperties() / analytics.getTotalProperties();
-//        return (int) (soldRatio * 100);
-//    }
-    private int calculateDemandScore(Analytics analytics) {
-        if (analytics.getTotalProperties() == null || analytics.getTotalProperties() == 0) {
-            return 0;
-        }
+    private int calculateDemandScore(List<PropertyDTO> properties) {
+        if (properties.isEmpty()) return 0;
 
-        // Calculate demand score based on:
-        // 1. Sold properties ratio (60% weight)
-        // 2. Available properties ratio (40% weight)
-        double soldRatio = (double) analytics.getSoldProperties() / analytics.getTotalProperties();
-        double availableRatio = (double) analytics.getAvailableProperties() / analytics.getTotalProperties();
+        // Calculate the ratio of sold to available properties
+        long totalProperties = properties.size();
+        long soldProperties = properties.stream()
+                .filter(p -> "SOLD".equals(p.getStatus()))
+                .count();
 
-        int soldScore = (int) (soldRatio * 60);
-        int availabilityScore = (int) ((1 - availableRatio) * 40); // Lower availability means higher demand
+        // Calculate days on market (if we had that data)
+        // For now, use a simple ratio as demand indicator
+        double soldRatio = (double) soldProperties / totalProperties;
 
-        return soldScore + availabilityScore;
+        // Add weight to recent sales if we had timestamp data
+        // For now use a simple score
+        return (int) (soldRatio * 100);
     }
 
     @Cacheable(value = "cityAnalytics", key = "#city", unless = "#result == null")
     @Override
     public List<AnalyticsDTO> getAnalyticsByCity(String city) {
         log.debug("Fetching analytics for city: {}", city);
-        return analyticsRepository.findByCity(city).stream()
+        List<Analytics> cityAnalytics = analyticsRepository.findByCity(city);
+
+        // If no existing analytics found, generate new ones
+        if (cityAnalytics.isEmpty()) {
+            AnalyticsDTO newAnalytics = generateAnalytics(city, null);
+            return Collections.singletonList(newAnalytics);
+        }
+
+        return cityAnalytics.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -177,7 +200,15 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     @Override
     public List<AnalyticsDTO> getAnalyticsByPropertyType(String propertyType) {
         log.debug("Fetching analytics for property type: {}", propertyType);
-        return analyticsRepository.findByPropertyType(propertyType).stream()
+        List<Analytics> typeAnalytics = analyticsRepository.findByPropertyType(propertyType);
+
+        // If no existing analytics found, generate new ones
+        if (typeAnalytics.isEmpty()) {
+            AnalyticsDTO newAnalytics = generateAnalytics(null, propertyType);
+            return Collections.singletonList(newAnalytics);
+        }
+
+        return typeAnalytics.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -194,18 +225,45 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     @Override
     public List<PropertyTrendDTO> getPropertyTrends(String city, String propertyType) {
         log.debug("Fetching property trends for city: {} and property type: {}", city, propertyType);
+
+        // First, check if we need to generate fresh analytics
+        if (shouldGenerateFreshAnalytics(city, propertyType)) {
+            generateAnalytics(city, propertyType);
+        }
+
+        // Now fetch the trends
         List<PropertyTrend> trends;
-        if (city != null && !city.isEmpty()) {
+        if (city != null && !city.isEmpty() && propertyType != null && !propertyType.isEmpty()) {
+            trends = propertyTrendRepository.findByCityAndPropertyTypeOrderByTrendDateDesc(city, propertyType);
+        } else if (city != null && !city.isEmpty()) {
             trends = propertyTrendRepository.findByCityOrderByTrendDateDesc(city);
         } else if (propertyType != null && !propertyType.isEmpty()) {
             trends = propertyTrendRepository.findByPropertyTypeOrderByTrendDateDesc(propertyType);
         } else {
-            trends = propertyTrendRepository.findAll();
+            trends = propertyTrendRepository.findAllByOrderByTrendDateDesc();
         }
 
         return trends.stream()
                 .map(this::convertToTrendDTO)
                 .collect(Collectors.toList());
+    }
+
+    private boolean shouldGenerateFreshAnalytics(String city, String propertyType) {
+        // Look for the latest analytics
+        List<PropertyTrend> trends;
+
+        if (city != null && !city.isEmpty() && propertyType != null && !propertyType.isEmpty()) {
+            trends = propertyTrendRepository.findByCityAndPropertyTypeOrderByTrendDateDesc(city, propertyType);
+        } else if (city != null && !city.isEmpty()) {
+            trends = propertyTrendRepository.findByCityOrderByTrendDateDesc(city);
+        } else if (propertyType != null && !propertyType.isEmpty()) {
+            trends = propertyTrendRepository.findByPropertyTypeOrderByTrendDateDesc(propertyType);
+        } else {
+            trends = propertyTrendRepository.findAllByOrderByTrendDateDesc();
+        }
+
+        // If no trends or the latest trend is older than 1 day, generate fresh analytics
+        return trends.isEmpty() || trends.get(0).getTrendDate().isBefore(LocalDateTime.now().minusDays(1));
     }
 
     @Cacheable(value = "dashboardStats", unless = "#result == null")
@@ -214,57 +272,180 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         log.debug("Generating dashboard statistics");
         Map<String, Object> stats = new HashMap<>();
 
-        // Get latest analytics
-        List<Analytics> recentAnalytics = analyticsRepository.findAnalyticsInDateRange(
-                LocalDateTime.now().minusDays(30),
-                LocalDateTime.now()
-        );
+        // Fetch property data for dashboard
+        PropertySearchResponse allProperties = propertiesClient.getAllProperties(0, 1000);
+        List<PropertyDTO> properties = allProperties.getContent();
 
         // Calculate key metrics
-        int totalProperties = calculateTotalProperties(recentAnalytics);
+        int totalProperties = properties.size();
+        int availableProperties = (int) properties.stream()
+                .filter(p -> "AVAILABLE".equals(p.getStatus()))
+                .count();
+        int soldProperties = (int) properties.stream()
+                .filter(p -> "SOLD".equals(p.getStatus()))
+                .count();
+        int rentedProperties = (int) properties.stream()
+                .filter(p -> "RENTED".equals(p.getStatus()))
+                .count();
 
-        int availableProperties = calculateAvailableProperties(recentAnalytics);
+        BigDecimal totalRevenue = properties.stream()
+                .filter(p -> "SOLD".equals(p.getStatus()))
+                .map(PropertyDTO::getPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        int soldProperties = calculateSoldProperties(recentAnalytics);
+        // Calculate property type distribution
+        Map<String, Long> propertyTypeDistribution = properties.stream()
+                .collect(Collectors.groupingBy(PropertyDTO::getType, Collectors.counting()));
 
-        BigDecimal totalRevenue = calculateTotalRevenue(recentAnalytics);
+        // Calculate city distribution
+        Map<String, Long> cityDistribution = properties.stream()
+                .collect(Collectors.groupingBy(PropertyDTO::getCity, Collectors.counting()));
 
+        // Calculate price ranges
+        Map<String, Long> priceRanges = calculatePriceRanges(properties);
+
+        // Calculate monthly trends
+        Map<String, Integer> monthlyListings = calculateMonthlyListings(properties);
+
+        // Add stats to the response
         stats.put("totalProperties", totalProperties);
-        stats.put("totalRevenue", totalRevenue);
-        stats.put("soldProperties", soldProperties);
         stats.put("availableProperties", availableProperties);
-
-        // Add trend information
-        List<PropertyTrend> recentTrends = propertyTrendRepository
-                .findAll().stream()
-                .filter(trend -> trend.getTrendDate().isAfter(LocalDateTime.now().minusDays(30)))
-                .collect(Collectors.toList());
-
-        stats.put("averageDemandScore", calculateAverageDemandScore(recentTrends));
-        stats.put("averagePriceChange", calculateAveragePriceChange(recentTrends));
+        stats.put("soldProperties", soldProperties);
+        stats.put("rentedProperties", rentedProperties);
+        stats.put("totalRevenue", totalRevenue);
+        stats.put("propertyTypeDistribution", propertyTypeDistribution);
+        stats.put("cityDistribution", cityDistribution);
+        stats.put("priceRanges", priceRanges);
+        stats.put("monthlyListings", monthlyListings);
         stats.put("occupancyRate", calculateOccupancyRate(totalProperties, availableProperties));
-        stats.put("averagePrice", calculateAveragePrice(totalRevenue, soldProperties));
+        stats.put("averagePrice", calculateAveragePrice(properties));
+        stats.put("averagePriceByType", calculateAveragePriceByType(properties));
+        stats.put("recentTrends", getRecentTrends());
 
         return stats;
+    }
+
+    private Map<String, Long> calculatePriceRanges(List<PropertyDTO> properties) {
+        Map<String, Long> priceRanges = new LinkedHashMap<>();
+
+        long under250k = properties.stream()
+                .filter(p -> p.getPrice().compareTo(BigDecimal.valueOf(250000)) < 0)
+                .count();
+
+        long from250kTo500k = properties.stream()
+                .filter(p -> p.getPrice().compareTo(BigDecimal.valueOf(250000)) >= 0 &&
+                        p.getPrice().compareTo(BigDecimal.valueOf(500000)) < 0)
+                .count();
+
+        long from500kTo750k = properties.stream()
+                .filter(p -> p.getPrice().compareTo(BigDecimal.valueOf(500000)) >= 0 &&
+                        p.getPrice().compareTo(BigDecimal.valueOf(750000)) < 0)
+                .count();
+
+        long from750kTo1M = properties.stream()
+                .filter(p -> p.getPrice().compareTo(BigDecimal.valueOf(750000)) >= 0 &&
+                        p.getPrice().compareTo(BigDecimal.valueOf(1000000)) < 0)
+                .count();
+
+        long over1M = properties.stream()
+                .filter(p -> p.getPrice().compareTo(BigDecimal.valueOf(1000000)) >= 0)
+                .count();
+
+        priceRanges.put("Under $250k", under250k);
+        priceRanges.put("$250k-$500k", from250kTo500k);
+        priceRanges.put("$500k-$750k", from500kTo750k);
+        priceRanges.put("$750k-$1M", from750kTo1M);
+        priceRanges.put("Over $1M", over1M);
+
+        return priceRanges;
+    }
+
+    private Map<String, Integer> calculateMonthlyListings(List<PropertyDTO> properties) {
+        // This would be more accurate if we had the created date
+        // For now, just create sample data
+        Map<String, Integer> monthlyListings = new LinkedHashMap<>();
+
+        // Get the last 6 months
+        LocalDate today = LocalDate.now();
+        for (int i = 5; i >= 0; i--) {
+            LocalDate month = today.minusMonths(i);
+            String monthName = month.getMonth().toString();
+
+            // For demo purposes, assign a count
+            // In a real scenario, you would filter by creation date
+            int count = 10 + (int)(Math.random() * 30);
+            monthlyListings.put(monthName, count);
+        }
+
+        return monthlyListings;
     }
 
     private double calculateOccupancyRate(int totalProperties, int availableProperties) {
         if (totalProperties == 0) return 0.0;
         return ((double)(totalProperties - availableProperties) / totalProperties) * 100;
     }
-    private double calculateAverageDemandScore(List<PropertyTrend> trends) {
-        return trends.stream()
-                .mapToInt(PropertyTrend::getDemandScore)
-                .average()
-                .orElse(0.0);
+
+    private BigDecimal calculateAveragePrice(List<PropertyDTO> properties) {
+        if (properties.isEmpty()) return BigDecimal.ZERO;
+
+        BigDecimal totalPrice = properties.stream()
+                .map(PropertyDTO::getPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return totalPrice.divide(BigDecimal.valueOf(properties.size()), 2, RoundingMode.HALF_UP);
     }
 
-    private double calculateAveragePriceChange(List<PropertyTrend> trends) {
-        return trends.stream()
-                .filter(trend -> trend.getPriceChangePercentage() != null)
-                .mapToDouble(PropertyTrend::getPriceChangePercentage)
-                .average()
-                .orElse(0.0);
+    private Map<String, BigDecimal> calculateAveragePriceByType(List<PropertyDTO> properties) {
+        return properties.stream()
+                .collect(Collectors.groupingBy(
+                        PropertyDTO::getType,
+                        Collectors.mapping(
+                                PropertyDTO::getPrice,
+                                Collectors.reducing(
+                                        BigDecimal.ZERO,
+                                        BigDecimal::add
+                                )
+                        )
+                ))
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> {
+                            long count = properties.stream()
+                                    .filter(p -> entry.getKey().equals(p.getType()))
+                                    .count();
+
+                            return entry.getValue().divide(
+                                    BigDecimal.valueOf(Math.max(1, count)),
+                                    2,
+                                    RoundingMode.HALF_UP
+                            );
+                        }
+                ));
+    }
+
+    private List<Map<String, Object>> getRecentTrends() {
+        // Get the most recent property trends
+        List<PropertyTrend> recentTrends = propertyTrendRepository.findAllByOrderByTrendDateDesc();
+
+        if (recentTrends.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return recentTrends.stream()
+                .limit(5)  // Get only the 5 most recent trends
+                .map(trend -> {
+                    Map<String, Object> trendMap = new HashMap<>();
+                    trendMap.put("city", trend.getCity());
+                    trendMap.put("propertyType", trend.getPropertyType());
+                    trendMap.put("averagePrice", trend.getAveragePrice());
+                    trendMap.put("priceChangePercentage", trend.getPriceChangePercentage());
+                    trendMap.put("demandScore", trend.getDemandScore());
+                    trendMap.put("trendDate", trend.getTrendDate());
+                    return trendMap;
+                })
+                .collect(Collectors.toList());
     }
 
     private AnalyticsDTO convertToDTO(Analytics analytics) {
@@ -279,6 +460,52 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         return dto;
     }
 
+    @Override
+    public List<String> getAvailableCities() {
+        try {
+            // Fetch properties
+            PropertySearchResponse response = propertiesClient.getAllProperties(0, 1000);
+
+            if (response != null && response.getContent() != null) {
+                // Extract unique city names and sort them
+                return response.getContent().stream()
+                        .map(PropertyDTO::getCity)
+                        .filter(city -> city != null && !city.isEmpty())
+                        .distinct()
+                        .sorted()
+                        .collect(Collectors.toList());
+            }
+
+            return Collections.emptyList();
+        } catch (Exception e) {
+            log.error("Error fetching available cities", e);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public List<String> getAvailablePropertyTypes() {
+        try {
+            // Fetch properties
+            PropertySearchResponse response = propertiesClient.getAllProperties(0, 1000);
+
+            if (response != null && response.getContent() != null) {
+                // Extract unique property types and sort them
+                return response.getContent().stream()
+                        .map(PropertyDTO::getType)
+                        .filter(type -> type != null && !type.isEmpty())
+                        .distinct()
+                        .sorted()
+                        .collect(Collectors.toList());
+            }
+
+            return Collections.emptyList();
+        } catch (Exception e) {
+            log.error("Error fetching available property types", e);
+            return Collections.emptyList();
+        }
+    }
+
     @CacheEvict(value = {
             "cityAnalytics",
             "propertyTypeAnalytics",
@@ -288,6 +515,56 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     @Scheduled(fixedRate = 3600000) // Every hour
     public void clearCache() {
         // This method will clear all caches
-        log.info("Cleared all caches");
+        log.info("Cleared all analytics caches");
+    }
+
+    @Scheduled(cron = "0 0 0 * * ?") // Every day at midnight
+    public void generateDailyAnalytics() {
+        log.info("Starting scheduled daily analytics generation");
+
+        try {
+            // Get all properties
+            PropertySearchResponse response = propertiesClient.getAllProperties(0, 1000);
+            List<PropertyDTO> properties = response.getContent();
+
+            if (properties.isEmpty()) {
+                log.warn("No properties found. Skipping analytics generation.");
+                return;
+            }
+
+            log.info("Found {} properties for analysis", properties.size());
+
+            // Get distinct cities
+            Set<String> cities = properties.stream()
+                    .map(PropertyDTO::getCity)
+                    .filter(city -> city != null && !city.isEmpty())
+                    .collect(Collectors.toSet());
+
+            log.info("Found cities: {}", cities);
+
+            // Get distinct property types
+            Set<String> propertyTypes = properties.stream()
+                    .map(PropertyDTO::getType)
+                    .filter(type -> type != null && !type.isEmpty())
+                    .collect(Collectors.toSet());
+
+            log.info("Found property types: {}", propertyTypes);
+
+            // Generate analytics for each city and property type combination
+            for (String city : cities) {
+                for (String propertyType : propertyTypes) {
+                    try {
+                        log.info("Generating analytics for city: {} and type: {}", city, propertyType);
+                        generateAnalytics(city, propertyType);
+                    } catch (Exception e) {
+                        log.error("Error generating analytics for city: {} and type: {}", city, propertyType, e);
+                    }
+                }
+            }
+
+            log.info("Completed scheduled daily analytics generation");
+        } catch (Exception e) {
+            log.error("Error in scheduled daily analytics generation", e);
+        }
     }
 }

@@ -10,8 +10,8 @@ import PropertySearchForm from '@/components/properties/PropertySearchForm';
 import PropertyForm from '@/components/properties/PropertyForm';
 import { updateProperty } from '@/lib/api/properties';
 import { PropertyDTO } from '@/types/property';
-import { ROLES } from '@/utils/roleUtils';
 import { withRoleProtection } from '@/components/auth/withRoleProtection';
+import { ROLES } from '@/utils/roleUtils';
 
 function EditPropertyPage() {
   const router = useRouter();
@@ -26,17 +26,21 @@ function EditPropertyPage() {
   };
 
   const handleSubmit = async (data: PropertyDTO) => {
-    if (!selectedProperty?.id) return;
+    if (!selectedProperty?.id) return undefined;
 
     setIsSubmitting(true);
     try {
       const updatedProperty = await updateProperty(selectedProperty.id, data);
       setSelectedProperty(updatedProperty);
       enqueueSnackbar('Property updated successfully', { variant: 'success' });
+      return updatedProperty;
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to update property', {
-        variant: 'error',
-      });
+      enqueueSnackbar(
+        err.response?.data?.message || 'Failed to update property',
+        {
+          variant: 'error',
+        }
+      );
       throw err;
     } finally {
       setIsSubmitting(false);
@@ -58,13 +62,11 @@ function EditPropertyPage() {
         </Typography>
       </Box>
 
-      {/* Property Search Form */}
       <PropertySearchForm onPropertyFound={handlePropertyFound} />
 
-      {/* Property Form */}
       {selectedProperty ? (
         <PropertyForm
-          property={selectedProperty}
+          initialData={selectedProperty}
           onSubmit={handleSubmit}
           isLoading={isSubmitting}
         />

@@ -34,7 +34,12 @@ import {
   PropertyStatus,
   ImageDTO,
 } from '@/types/property';
-import { uploadImage, setMainImage, deleteImage } from '@/lib/api/properties';
+import {
+  uploadImage,
+  setMainImage,
+  deleteImage,
+  reorderImages,
+} from '@/lib/api/properties';
 import { useSnackbar } from 'notistack';
 import {
   DragDropContext,
@@ -73,7 +78,7 @@ const schema = yup.object().shape({
     .string()
     .required('Property type is required')
     .oneOf(
-      ['APARTMENT', 'HOUSE', 'COMMERCIAL'],
+      ['APARTMENT', 'HOUSE', 'COMMERCIAL', 'CONDO'],
       'Invalid property type'
     ) as yup.Schema<PropertyType>,
   status: yup
@@ -162,6 +167,18 @@ const PropertyForm = ({
     }
   }, [initialData, reset]);
 
+  // Ensure images are properly initialized
+  useEffect(() => {
+    if (initialData?.images) {
+      // Ensure each image has a unique string id for react-beautiful-dnd
+      const formattedImages = initialData.images.map((img, index) => ({
+        ...img,
+        dragId: `image-${img.id}-${index}`, // Unique identifier
+      }));
+      setImages(formattedImages);
+    }
+  }, [initialData]);
+
   const handleFormSubmit = async (data: PropertyDTO) => {
     try {
       // Include images in the submitted data
@@ -198,6 +215,16 @@ const PropertyForm = ({
     setUploadProgress(0);
 
     try {
+      // If no property ID exists yet, show a warning
+      if (!initialData?.id) {
+        enqueueSnackbar(
+          'Please save the property first before uploading images',
+          {
+            variant: 'warning',
+          }
+        );
+        return;
+      }
       // Upload one file at a time with progress tracking
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -259,7 +286,7 @@ const PropertyForm = ({
     }
   };
 
-  const handleImagesReorder = (result: DropResult) => {
+  const handleImagesReorder = async (result: DropResult) => {
     // Skip if dropped outside the list
     if (!result.destination) return;
 
@@ -268,8 +295,8 @@ const PropertyForm = ({
 
     // Reorder the images array
     const reorderedImages = Array.from(images);
-    const [removed] = reorderedImages.splice(result.source.index, 1);
-    reorderedImages.splice(result.destination.index, 0, removed);
+    const [reorderedItem] = reorderedImages.splice(result.source.index, 1);
+    reorderedImages.splice(result.destination.index, 0, reorderedItem);
 
     // Update display order
     const updatedImages = reorderedImages.map((img, index) => ({
@@ -277,10 +304,29 @@ const PropertyForm = ({
       displayOrder: index,
     }));
 
-    setImages(updatedImages);
+    try {
+      // Ensure we have a property ID
+      if (!initialData?.id) {
+        enqueueSnackbar('Property ID is required to reorder images', {
+          variant: 'warning',
+        });
+        return;
+      }
 
-    // In a real application, you would then call an API to persist this order
-    // reorderImages(initialData.id, updatedImages.map(img => img.id))
+      // Call API to persist the new order
+      const reorderedApiResponse = await reorderImages(
+        initialData.id,
+        updatedImages.map((img) => img.id)
+      );
+
+      // Update local state with the API response
+      setImages(reorderedApiResponse);
+
+      enqueueSnackbar('Images reordered successfully', { variant: 'success' });
+    } catch (error) {
+      console.error('Error reordering images:', error);
+      enqueueSnackbar('Failed to reorder images', { variant: 'error' });
+    }
   };
 
   // Render the form
@@ -335,6 +381,7 @@ const PropertyForm = ({
                     <MenuItem value="APARTMENT">Apartment</MenuItem>
                     <MenuItem value="HOUSE">House</MenuItem>
                     <MenuItem value="COMMERCIAL">Commercial</MenuItem>
+                    <MenuItem value="CONDO">Condo</MenuItem>
                   </Select>
                   <FormHelperText>{errors.type?.message}</FormHelperText>
                 </FormControl>
@@ -578,7 +625,10 @@ const PropertyForm = ({
                   </Typography>
                 ) : (
                   <DragDropContext onDragEnd={handleImagesReorder}>
-                    <Droppable droppableId="property-images">
+                    <Droppable
+                      droppableId="property-images"
+                      direction="horizontal"
+                    >
                       {(
                         provided: import('react-beautiful-dnd').DroppableProvided
                       ) => (
@@ -587,7 +637,12 @@ const PropertyForm = ({
                           ref={provided.innerRef}
                           sx={{ mt: 2 }}
                         >
-                          <Grid container spacing={2}>
+                          <Grid
+                            container
+                            spacing={2}
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                          >
                             {images.map((image, index) => (
                               <Draggable
                                 key={image.id.toString()}
@@ -604,6 +659,7 @@ const PropertyForm = ({
                                     md={3}
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
                                   >
                                     <Paper
                                       elevation={0}

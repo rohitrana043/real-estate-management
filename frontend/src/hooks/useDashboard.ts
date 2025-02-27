@@ -1,7 +1,7 @@
 // src/hooks/useDashboard.ts
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import axios from '@/lib/api/axios';
+import axiosInstance from '@/lib/api/axios'; // Use the configured axiosInstance
 
 interface DashboardStats {
   totalViews: number;
@@ -38,43 +38,61 @@ export const useDashboard = () => {
     const fetchDashboardStats = async () => {
       try {
         setLoading(true);
-        // In a real application, these would be separate API endpoints
-        // const viewsResponse = await axios.get('/api/analytics/views');
-        // const propertiesResponse = await axios.get('/api/properties/stats');
-        // const favoritesResponse = await axios.get('/api/favorites/stats');
-        // const messagesResponse = await axios.get('/api/messages/stats');
-        // const activityResponse = await axios.get('/api/activity/recent');
 
-        // For now, we'll use mock data
+        // Fetch analytics data from the backend using axiosInstance
+        const analyticsResponse = await axiosInstance.get(
+          '/analytics/dashboard'
+        );
+        const analyticsData = analyticsResponse.data;
+
+        // Build dashboard stats from the analytics data
         setStats({
-          totalViews: 2845,
-          totalProperties: 18,
-          totalFavorites: 245,
-          totalMessages: 12,
+          totalViews: analyticsData.totalProperties || 0,
+          totalProperties:
+            analyticsData.availableProperties + analyticsData.soldProperties ||
+            0,
+          totalFavorites: analyticsData.totalProperties || 0,
+          totalMessages: analyticsData.totalProperties || 0,
           recentActivity: [
             {
               id: 1,
               type: 'property_view',
-              property: 'Modern Apartment',
-              location: 'Downtown',
-              time: '2 hours ago',
+              property: 'Property Summary',
+              location: analyticsData.city || 'All cities',
+              time: new Date(analyticsData.reportDate).toLocaleString(),
               icon: 'visibility',
             },
-            // Add more activity items...
           ],
           propertyStats: {
-            activeListings: 15,
-            pendingSales: 3,
+            activeListings: analyticsData.availableProperties || 0,
+            pendingSales: analyticsData.soldProperties || 0,
             trends: {
-              views: { value: 12, isPositive: true },
-              properties: { value: 5, isPositive: true },
-              favorites: { value: 8, isPositive: true },
-              messages: { value: 3, isPositive: false },
+              views: {
+                value: 0,
+                isPositive: true,
+              },
+              properties: {
+                value: 0,
+                isPositive: true,
+              },
+              favorites: {
+                value: 0,
+                isPositive: true,
+              },
+              messages: {
+                value: 0,
+                isPositive: true,
+              },
             },
           },
         });
       } catch (err: any) {
-        setError(err.message || 'Failed to fetch dashboard data');
+        console.error('Error fetching analytics data:', err);
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            'Failed to fetch analytics data'
+        );
       } finally {
         setLoading(false);
       }

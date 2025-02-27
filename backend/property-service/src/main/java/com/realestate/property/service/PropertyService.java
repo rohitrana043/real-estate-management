@@ -10,6 +10,8 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.List;
+
 @Validated
 public interface PropertyService {
     /**
@@ -40,6 +42,15 @@ public interface PropertyService {
      * @throws PropertyNotFoundException if the property is not found
      */
     PropertyDTO getProperty(@NotNull Long id);
+
+    /**
+     * Get similar properties to the specified property
+     *
+     * @param id Property ID to find similar properties for
+     * @param limit Maximum number of similar properties to return
+     * @return List of similar property DTOs
+     */
+    List<PropertyDTO> getSimilarProperties(Long id, int limit);
 
     /**
      * Retrieves all properties with pagination.

@@ -18,7 +18,7 @@ public class PropertyDTO {
     private String description;
 
     @NotBlank(message = "Type is required")
-    @Pattern(regexp = "^(APARTMENT|HOUSE|COMMERCIAL)$", message = "Invalid property type")
+    @Pattern(regexp = "^(APARTMENT|HOUSE|COMMERCIAL|CONDO)$", message = "Invalid property type")
     private String type;
 
     @NotBlank(message = "Status is required")
@@ -48,8 +48,11 @@ public class PropertyDTO {
     @NotBlank(message = "State is required")
     private String state;
 
-    @Pattern(regexp = "^\\d{5}(-\\d{4})?$", message = "Invalid ZIP code format")
+    @Pattern(regexp = "^\\d{5}(-\\d{4})?$|^[A-Za-z]\\d[A-Za-z][ -]?\\d[A-Za-z]\\d$|^\\d{6}$", message = "Invalid ZIP code format")
     private String zipCode;
 
     private List<ImageDTO> images;
+
+    private boolean favorite;
+    private long favoriteCount;
 }

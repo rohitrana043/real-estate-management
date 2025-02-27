@@ -22,9 +22,10 @@ import {
   ListItemText,
 } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
-import Navbar from '@/components/layout/Navbar';
-import { getProperty } from '@/lib/api/properties';
+import { getProperty, getSimilarProperties } from '@/lib/api/properties';
 import { PropertyDTO } from '@/types/property';
+import FavoriteButton from '@/components/properties/FavoriteButton';
+import PropertyFavoritesStats from '@/components/properties/PropertyFavoritesStats';
 import {
   BedOutlined,
   BathtubOutlined,
@@ -38,14 +39,13 @@ import {
   ParkOutlined,
   ArrowBack,
   Share,
-  Favorite,
-  FavoriteBorder,
   CalendarMonth,
   Phone,
   Email,
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -69,16 +69,150 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+// PropertyCard component for similar properties
+const SimilarPropertyCard = ({
+  property,
+  onToggleFavorite,
+}: {
+  property: PropertyDTO;
+  onToggleFavorite: (id: number) => void;
+}) => {
+  const router = useRouter();
+
+  // Get the main image URL or use a placeholder
+  const mainImageUrl =
+    property.images && property.images.length > 0
+      ? property.images.find((img) => img.isMain)?.url || property.images[0].url
+      : '/images/properties/property-placeholder.jpg';
+
+  // Format price as currency
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        p: 0,
+        borderRadius: 2,
+        overflow: 'hidden',
+        '&:hover': {
+          boxShadow: '0px 8px 25px rgba(0, 0, 0, 0.08)',
+          transition: 'all 0.3s ease-in-out',
+          cursor: 'pointer',
+        },
+      }}
+      onClick={() => property.id && router.push(`/properties/${property.id}`)}
+    >
+      <Box
+        sx={{
+          height: 180,
+          backgroundColor: 'neutral.main',
+          backgroundImage: `url('${mainImageUrl}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          position: 'relative',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+          }}
+        >
+          {property.id && (
+            <FavoriteButton
+              propertyId={property.id}
+              size="small"
+              initialIsFavorite={property.favorite || false}
+              showCount={false}
+              color="default"
+            />
+          )}
+        </Box>
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            color: 'white',
+            p: 1,
+          }}
+        >
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            {formatPrice(property.price)}
+          </Typography>
+        </Box>
+      </Box>
+      <Box sx={{ p: 2 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+          {property.title}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          <LocationOnOutlined
+            fontSize="small"
+            color="action"
+            sx={{ mr: 0.5 }}
+          />
+          <Typography variant="body2" color="text.secondary" noWrap>
+            {property.address}, {property.city}
+          </Typography>
+        </Box>
+        <Divider sx={{ my: 1.5 }} />
+        <Grid container spacing={1}>
+          <Grid item xs={4}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <BedOutlined fontSize="small" color="action" sx={{ mr: 0.5 }} />
+              <Typography variant="body2">{property.bedrooms} Beds</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={4}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <BathtubOutlined
+                fontSize="small"
+                color="action"
+                sx={{ mr: 0.5 }}
+              />
+              <Typography variant="body2">
+                {property.bathrooms} Baths
+              </Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={4}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <SquareFootOutlined
+                fontSize="small"
+                color="action"
+                sx={{ mr: 0.5 }}
+              />
+              <Typography variant="body2">{property.area} ft²</Typography>
+            </Box>
+          </Grid>
+        </Grid>
+      </Box>
+    </Paper>
+  );
+};
+
 export default function PropertyDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
   const { user, isAuthenticated } = useAuth();
   const [property, setProperty] = useState<PropertyDTO | null>(null);
+  const [similarProperties, setSimilarProperties] = useState<PropertyDTO[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [similarLoading, setSimilarLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -95,10 +229,19 @@ export default function PropertyDetailPage() {
 
         const propertyData = await getProperty(Number(params.id));
         setProperty(propertyData);
-        // Set the first image as the default selected image
+        // Find and set the main image as the selected image
         if (propertyData.images && propertyData.images.length > 0) {
-          setSelectedImage(propertyData.images[0].url);
+          const mainImage = propertyData.images.find((img) => img.isMain);
+
+          // If a main image exists, use it; otherwise, use the first image
+          setSelectedImage(
+            mainImage ? mainImage.url : propertyData.images[0].url
+          );
         }
+
+        // Fetch similar properties
+        setSimilarLoading(true);
+        fetchSimilarProperties(Number(params.id));
       } catch (err: any) {
         console.error('Error fetching property details:', err);
 
@@ -124,16 +267,22 @@ export default function PropertyDetailPage() {
     fetchPropertyDetails();
   }, [params?.id, enqueueSnackbar, router]);
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  // Fetch similar properties
+  const fetchSimilarProperties = async (propertyId: number) => {
+    try {
+      const similarProps = await getSimilarProperties(propertyId);
+      // Filter out the current property just in case it's included in the results
+      setSimilarProperties(similarProps.filter((p) => p.id !== propertyId));
+    } catch (err) {
+      console.error('Error fetching similar properties:', err);
+      // We don't set an error state for similar properties - just show empty if fails
+    } finally {
+      setSimilarLoading(false);
+    }
   };
 
-  const handleFavoriteToggle = () => {
-    setIsFavorite(!isFavorite);
-    enqueueSnackbar(
-      isFavorite ? 'Removed from favorites' : 'Added to favorites',
-      { variant: 'success' }
-    );
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
   };
 
   const handleShare = () => {
@@ -149,6 +298,17 @@ export default function PropertyDetailPage() {
       navigator.clipboard.writeText(window.location.href);
       enqueueSnackbar('Link copied to clipboard', { variant: 'success' });
     }
+  };
+
+  // Handle toggle favorite for similar properties
+  const handleToggleFavorite = async (propertyId: number) => {
+    if (!user) {
+      enqueueSnackbar('Please log in to save favorites', { variant: 'info' });
+      return;
+    }
+
+    // This would be handled by the FavoriteButton component
+    // We just need to pass this method to the component
   };
 
   // Format price as currency
@@ -173,6 +333,7 @@ export default function PropertyDetailPage() {
         return 'default';
     }
   };
+
   if (loading) {
     return (
       <Container maxWidth="lg">
@@ -200,7 +361,7 @@ export default function PropertyDetailPage() {
         <Box sx={{ mb: 3 }}>
           <Button
             startIcon={<ArrowBack />}
-            onClick={() => router.back()}
+            onClick={() => router.push('/properties')}
             sx={{ textTransform: 'none' }}
           >
             Back to Properties
@@ -217,6 +378,16 @@ export default function PropertyDetailPage() {
     <>
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <>
+          {/* Back button */}
+          <Box sx={{ mb: 3 }}>
+            <Button
+              startIcon={<ArrowBack />}
+              onClick={() => router.push('/properties')}
+              sx={{ textTransform: 'none' }}
+            >
+              Back to Properties
+            </Button>
+          </Box>
           {/* Property Header */}
           <Box sx={{ mb: 4 }}>
             <Grid container spacing={2} alignItems="center">
@@ -259,7 +430,15 @@ export default function PropertyDetailPage() {
               </Grid>
             </Grid>
 
-            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+            <Box sx={{ display: 'flex', mt: 2 }}>
+              <PropertyFavoritesStats
+                propertyId={property.id}
+                isFavorite={property.favorite}
+                favoriteCount={property.favoriteCount}
+                variant="simple"
+              />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
               <Chip
                 label={property.status}
                 color={getStatusColor(property.status) as any}
@@ -303,16 +482,13 @@ export default function PropertyDetailPage() {
                     gap: 1,
                   }}
                 >
-                  <IconButton
-                    onClick={handleFavoriteToggle}
-                    sx={{ backgroundColor: 'rgba(255, 255, 255, 0.8)' }}
-                  >
-                    {isFavorite ? (
-                      <Favorite color="error" />
-                    ) : (
-                      <FavoriteBorder />
-                    )}
-                  </IconButton>
+                  <FavoriteButton
+                    propertyId={property.id || 0}
+                    size="large"
+                    initialIsFavorite={false} // This will be updated by the component
+                    showCount={false}
+                    color="default"
+                  />
                   <IconButton
                     onClick={handleShare}
                     sx={{ backgroundColor: 'rgba(255, 255, 255, 0.8)' }}
@@ -685,111 +861,29 @@ export default function PropertyDetailPage() {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Here are some other properties you might be interested in
             </Typography>
-            <Grid container spacing={3}>
-              {[1, 2, 3].map((item) => (
-                <Grid item xs={12} sm={6} md={4} key={item}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 0,
-                      borderRadius: 2,
-                      overflow: 'hidden',
-                      '&:hover': {
-                        boxShadow: '0px 8px 25px rgba(0, 0, 0, 0.08)',
-                        transition: 'all 0.3s ease-in-out',
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        height: 180,
-                        backgroundColor: 'neutral.main',
-                        backgroundImage: `url('/images/properties/property-placeholder.jpg')`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        position: 'relative',
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                          color: 'white',
-                          p: 1,
-                        }}
-                      >
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ fontWeight: 600 }}
-                        >
-                          $425,000
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Box sx={{ p: 2 }}>
-                      <Typography
-                        variant="subtitle1"
-                        sx={{ fontWeight: 600, mb: 1 }}
-                      >
-                        Modern Apartment
-                      </Typography>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          mb: 1,
-                        }}
-                      >
-                        <LocationOnOutlined
-                          fontSize="small"
-                          color="action"
-                          sx={{ mr: 0.5 }}
-                        />
-                        <Typography variant="body2" color="text.secondary">
-                          123 Main St, Cityville
-                        </Typography>
-                      </Box>
-                      <Divider sx={{ my: 1.5 }} />
-                      <Grid container spacing={1}>
-                        <Grid item xs={4}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <BedOutlined
-                              fontSize="small"
-                              color="action"
-                              sx={{ mr: 0.5 }}
-                            />
-                            <Typography variant="body2">2 Beds</Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={4}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <BathtubOutlined
-                              fontSize="small"
-                              color="action"
-                              sx={{ mr: 0.5 }}
-                            />
-                            <Typography variant="body2">2 Baths</Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={4}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <SquareFootOutlined
-                              fontSize="small"
-                              color="action"
-                              sx={{ mr: 0.5 }}
-                            />
-                            <Typography variant="body2">1200 ft²</Typography>
-                          </Box>
-                        </Grid>
-                      </Grid>
-                    </Box>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
+
+            {similarLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : similarProperties.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" color="text.secondary">
+                  No similar properties found
+                </Typography>
+              </Box>
+            ) : (
+              <Grid container spacing={3}>
+                {similarProperties.map((property) => (
+                  <Grid item xs={12} sm={6} md={4} key={property.id}>
+                    <SimilarPropertyCard
+                      property={property}
+                      onToggleFavorite={handleToggleFavorite}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            )}
           </Box>
         </>
       </Container>

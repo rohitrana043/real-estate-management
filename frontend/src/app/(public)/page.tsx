@@ -14,9 +14,10 @@ import {
   Avatar,
   Rating,
   Stack,
-  Divider,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import HomeIcon from '@mui/icons-material/Home';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -26,46 +27,37 @@ import { translations } from '@/translations';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { debugAuthState } from '@/lib/debug/authDebug';
+import { getProperties } from '@/lib/api/properties';
+import { PropertyDTO } from '@/types/property';
+import PropertyCard from '@/components/properties/PropertyCard';
+import favoritesApi from '@/lib/api/favorites';
+import { useSnackbar } from 'notistack';
 
 export default function Home() {
   const router = useRouter();
   const { language } = useSettings();
   const t = translations[language];
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const pathname = usePathname();
+  const { enqueueSnackbar } = useSnackbar();
+  // State for featured properties
+  const [featuredProperties, setFeaturedProperties] = useState<PropertyDTO[]>(
+    []
+  );
+  const [propertiesLoading, setPropertiesLoading] = useState(true);
+  const [propertiesError, setPropertiesError] = useState<string | null>(null);
+  const [favoritePropertyIds, setFavoritePropertyIds] = useState<Set<number>>(
+    new Set()
+  );
 
   useEffect(() => {
     debugAuthState();
   }, []);
 
   useEffect(() => {
-    console.log('Home page mounted, pathname:', pathname);
-
-    // Debug router navigation
-    const originalPush = router.push;
-    router.push = function (...args) {
-      console.log('Navigation triggered from Home page to:', args[0]);
-      return originalPush.apply(this, args);
-    };
-
-    return () => {
-      console.log('Home page unmounting');
-      router.push = originalPush;
-    };
-  }, []);
-
-  useEffect(() => {
-    console.log(
-      'Home page mounted, isAuthenticated:',
-      isAuthenticated,
-      'isLoading:',
-      isLoading
-    );
-
     // Simple redirect monitor
     const originalPush = router.push;
     router.push = function (...args) {
-      console.log('Router redirecting to:', args[0]);
       return originalPush.apply(this, args);
     };
 
@@ -73,6 +65,87 @@ export default function Home() {
       router.push = originalPush;
     };
   }, [isAuthenticated, isLoading]);
+
+  useEffect(() => {
+    const fetchFeaturedProperties = async () => {
+      try {
+        setPropertiesLoading(true);
+        // Fetch first page of properties
+        const response = await getProperties(0, 10);
+
+        // Randomly select 3 properties or take first 3 if less than 3
+        const selectedProperties =
+          response.content.length > 3
+            ? getRandomProperties(response.content, 3)
+            : response.content.slice(0, 3);
+
+        setFeaturedProperties(selectedProperties);
+      } catch (error) {
+        console.error('Error fetching featured properties:', error);
+        setPropertiesError('Failed to load featured properties');
+      } finally {
+        setPropertiesLoading(false);
+      }
+    };
+
+    fetchFeaturedProperties();
+  }, []);
+
+  // Fetch favorite IDs when component mounts and user is logged in
+  useEffect(() => {
+    const fetchFavoriteIds = async () => {
+      if (user) {
+        try {
+          const ids = await favoritesApi.getFavoriteIds();
+          setFavoritePropertyIds(new Set(ids));
+        } catch (error) {
+          console.error('Error fetching favorite IDs:', error);
+        }
+      }
+    };
+
+    fetchFavoriteIds();
+  }, [user]);
+
+  // Toggle favorite status for a property
+  const handleToggleFavorite = async (propertyId: number) => {
+    if (!user) {
+      enqueueSnackbar('Please log in to save favorites', { variant: 'info' });
+      return;
+    }
+
+    try {
+      const isCurrentlyFavorite = favoritePropertyIds.has(propertyId);
+
+      if (isCurrentlyFavorite) {
+        await favoritesApi.removeFavorite(propertyId);
+        setFavoritePropertyIds((prev) => {
+          const next = new Set(prev);
+          next.delete(propertyId);
+          return next;
+        });
+      } else {
+        await favoritesApi.addFavorite(propertyId);
+        setFavoritePropertyIds((prev) => new Set([...prev, propertyId]));
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
+
+  const getRandomProperties = (properties: PropertyDTO[], count: number) => {
+    const shuffled = [...properties].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  };
+
+  // Format price as currency
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
 
   const features = [
     {
@@ -96,36 +169,6 @@ export default function Home() {
       icon: (
         <SupportAgentIcon sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
       ),
-    },
-  ];
-
-  const featuredProperties = [
-    {
-      title: 'Luxury Villa with Ocean View',
-      location: 'Miami Beach, FL',
-      price: '$2,500,000',
-      image: '/images/properties/toronto-apartment.jpg',
-      beds: 5,
-      baths: 4,
-      sqft: 4200,
-    },
-    {
-      title: 'Modern Downtown Apartment',
-      location: 'New York, NY',
-      price: '$1,200,000',
-      image: '/images/properties/new-york-apartment.jpg',
-      beds: 2,
-      baths: 2,
-      sqft: 1500,
-    },
-    {
-      title: 'Suburban Family Home',
-      location: 'Austin, TX',
-      price: '$750,000',
-      image: '/images/properties/downtown-apartment.jpg',
-      beds: 4,
-      baths: 3,
-      sqft: 2800,
     },
   ];
 
@@ -263,51 +306,29 @@ export default function Home() {
             Discover our handpicked selection of premium properties
           </Typography>
 
-          <Grid container spacing={4}>
-            {featuredProperties.map((property) => (
-              <Grid item key={property.title} xs={12} md={4}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      transform: 'translateY(-5px)',
-                      transition: 'transform 0.2s',
-                    },
-                  }}
-                  onClick={() => router.push('/properties')}
-                >
-                  <CardMedia
-                    component="img"
-                    height="240"
-                    image={property.image}
-                    alt={property.title}
+          {propertiesLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : propertiesError ? (
+            <Alert severity="error" sx={{ mx: 'auto', maxWidth: 600 }}>
+              {propertiesError}
+            </Alert>
+          ) : (
+            <Grid container spacing={4}>
+              {featuredProperties.map((property) => (
+                <Grid item key={property.id} xs={12} md={4}>
+                  <PropertyCard
+                    property={property}
+                    isFavorite={
+                      property.id ? favoritePropertyIds.has(property.id) : false
+                    }
+                    onToggleFavorite={handleToggleFavorite}
                   />
-                  <CardContent>
-                    <Typography gutterBottom variant="h6" component="h3">
-                      {property.title}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      gutterBottom
-                    >
-                      {property.location}
-                    </Typography>
-                    <Typography variant="h6" color="primary" gutterBottom>
-                      {property.price}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {property.beds} beds • {property.baths} baths •{' '}
-                      {property.sqft} sqft
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+                </Grid>
+              ))}
+            </Grid>
+          )}
         </Container>
       </Box>
 

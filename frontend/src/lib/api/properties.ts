@@ -53,6 +53,26 @@ export const searchProperties = async (
   return response.data;
 };
 
+// New endpoint to get similar properties
+export const getSimilarProperties = async (
+  propertyId: number,
+  limit = 3
+): Promise<PropertyDTO[]> => {
+  try {
+    const response = await axiosInstance.get(
+      `${PROPERTIES_ENDPOINT}/${propertyId}/similar`,
+      {
+        params: { limit },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Error fetching similar properties:', error);
+    // Return empty array if the endpoint fails or doesn't exist yet
+    return [];
+  }
+};
+
 // Protected endpoints - Require authentication
 export const createProperty = async (
   property: PropertyDTO

@@ -14,12 +14,21 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
+
+import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -29,6 +38,7 @@ public class PropertyServiceImpl implements PropertyService {
     private final PropertyMapper propertyMapper;
     private final PropertyValidator propertyValidator;
     private final ApplicationEventPublisher eventPublisher;
+    private final FavoritePropertyServiceImpl favoriteService;
 
     @Override
     @Transactional
@@ -89,7 +99,30 @@ public class PropertyServiceImpl implements PropertyService {
         log.info("Fetching property with id: {}", id);
         Property property = propertyRepository.findById(id)
                 .orElseThrow(() -> new PropertyNotFoundException("Property not found with id: " + id));
-        return propertyMapper.toDTO(property);
+
+        PropertyDTO dto = propertyMapper.toDTO(property);
+
+        // Get the current authenticated user if available
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() &&
+                    !"anonymousUser".equals(authentication.getPrincipal())) {
+                String userEmail = authentication.getName();
+
+                // Set favorite status
+                dto.setFavorite(favoriteService.isFavorite(id, userEmail));
+            }
+
+            // Set favorite count regardless of authentication
+            dto.setFavoriteCount(favoriteService.getFavoriteCount(id));
+        } catch (Exception e) {
+            log.warn("Error getting favorite info for property id: {}", id, e);
+            // Don't fail the whole request if favorite info can't be retrieved
+            dto.setFavorite(false);
+            dto.setFavoriteCount(0);
+        }
+
+        return dto;
     }
 
     @Override
@@ -97,8 +130,35 @@ public class PropertyServiceImpl implements PropertyService {
     public Page<PropertyDTO> getAllProperties(Pageable pageable) {
         log.info("Fetching all properties with pagination: page={}, size={}",
                 pageable.getPageNumber(), pageable.getPageSize());
-        return propertyRepository.findAll(pageable)
-                .map(propertyMapper::toDTO);
+
+        Page<Property> propertyPage = propertyRepository.findAll(pageable);
+
+        // Convert to DTOs
+        Page<PropertyDTO> dtoPage = propertyPage.map(propertyMapper::toDTO);
+
+        // Enrich with favorite info if authenticated
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() &&
+                    !"anonymousUser".equals(authentication.getPrincipal())) {
+                String userEmail = authentication.getName();
+                Set<Long> favoriteIds = favoriteService.getFavoritedPropertyIds(userEmail);
+
+                // Update favorite status
+                dtoPage.getContent().forEach(dto -> {
+                    dto.setFavorite(favoriteIds.contains(dto.getId()));
+                    dto.setFavoriteCount(favoriteService.getFavoriteCount(dto.getId()));
+                });
+            } else {
+                // Just set favorite counts
+                dtoPage.getContent().forEach(dto ->
+                        dto.setFavoriteCount(favoriteService.getFavoriteCount(dto.getId())));
+            }
+        } catch (Exception e) {
+            log.warn("Error getting favorite info for properties", e);
+        }
+
+        return dtoPage;
     }
 
     @Override
@@ -122,8 +182,32 @@ public class PropertyServiceImpl implements PropertyService {
         validateSearchCriteria(criteria);
 
         Specification<Property> spec = PropertySpecifications.withCriteria(criteria);
-        return propertyRepository.findAll(spec, pageable)
+        Page<PropertyDTO> dtoPage = propertyRepository.findAll(spec, pageable)
                 .map(propertyMapper::toDTO);
+
+        // Enrich with favorite info if authenticated
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() &&
+                    !"anonymousUser".equals(authentication.getPrincipal())) {
+                String userEmail = authentication.getName();
+                Set<Long> favoriteIds = favoriteService.getFavoritedPropertyIds(userEmail);
+
+                // Update favorite status
+                dtoPage.getContent().forEach(dto -> {
+                    dto.setFavorite(favoriteIds.contains(dto.getId()));
+                    dto.setFavoriteCount(favoriteService.getFavoriteCount(dto.getId()));
+                });
+            } else {
+                // Just set favorite counts
+                dtoPage.getContent().forEach(dto ->
+                        dto.setFavoriteCount(favoriteService.getFavoriteCount(dto.getId())));
+            }
+        } catch (Exception e) {
+            log.warn("Error getting favorite info for properties", e);
+        }
+
+        return dtoPage;
     }
 
     private void validateSearchCriteria(PropertySearchCriteria criteria) {
@@ -147,5 +231,124 @@ public class PropertyServiceImpl implements PropertyService {
                 && criteria.getMinBathrooms() > criteria.getMaxBathrooms()) {
             throw new IllegalArgumentException("Minimum bathrooms cannot be greater than maximum bathrooms");
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PropertyDTO> getSimilarProperties(Long id, int limit) {
+        log.info("Finding similar properties for property with id: {}", id);
+
+        // Get the source property
+        Property sourceProperty = propertyRepository.findById(id)
+                .orElseThrow(() -> new PropertyNotFoundException("Property not found with id: " + id));
+
+        // Build criteria for similar properties
+        PropertySearchCriteria criteria = new PropertySearchCriteria();
+
+        // Same property type
+        criteria.setType(sourceProperty.getType());
+
+        // Similar price range (±20%)
+        BigDecimal priceMin = sourceProperty.getPrice().multiply(new BigDecimal("0.8"));
+        BigDecimal priceMax = sourceProperty.getPrice().multiply(new BigDecimal("1.2"));
+        criteria.setMinPrice(priceMin);
+        criteria.setMaxPrice(priceMax);
+
+        // Same location (city and state)
+        criteria.setCity(sourceProperty.getCity());
+        criteria.setState(sourceProperty.getState());
+
+        // Similar bedrooms (±1)
+        criteria.setMinBedrooms(Math.max(1, sourceProperty.getBedrooms() - 1));
+        criteria.setMaxBedrooms(sourceProperty.getBedrooms() + 1);
+
+        // Find similar properties
+        Specification<Property> spec = PropertySpecifications.withCriteria(criteria);
+
+        // Add a condition to exclude the source property
+        Specification<Property> notSameProperty = (root, query, cb) ->
+                cb.notEqual(root.get("id"), sourceProperty.getId());
+
+        // Apply both specifications
+        List<Property> similarProperties = propertyRepository.findAll(
+                Specification.where(spec).and(notSameProperty),
+                PageRequest.of(0, limit)
+        ).getContent();
+
+        // If we don't have enough results, try with more relaxed criteria
+        if (similarProperties.size() < limit) {
+            log.debug("Not enough similar properties found with strict criteria. Relaxing criteria...");
+
+            // Reset criteria for a broader search
+            criteria = new PropertySearchCriteria();
+
+            // Only keep property type
+            criteria.setType(sourceProperty.getType());
+
+            // Wider price range (±30%)
+            priceMin = sourceProperty.getPrice().multiply(new BigDecimal("0.7"));
+            priceMax = sourceProperty.getPrice().multiply(new BigDecimal("1.3"));
+            criteria.setMinPrice(priceMin);
+            criteria.setMaxPrice(priceMax);
+
+            // Same state only
+            criteria.setState(sourceProperty.getState());
+
+            // Apply relaxed criteria
+            spec = PropertySpecifications.withCriteria(criteria);
+
+            similarProperties = propertyRepository.findAll(
+                    Specification.where(spec).and(notSameProperty),
+                    PageRequest.of(0, limit)
+            ).getContent();
+        }
+
+        // If we still don't have enough, do a final search with minimal criteria
+        if (similarProperties.size() < limit) {
+            log.debug("Still not enough similar properties. Using minimal criteria...");
+
+            // Reset criteria for the broadest search
+            criteria = new PropertySearchCriteria();
+
+            // Only keep property type
+            criteria.setType(sourceProperty.getType());
+
+            // Apply minimal criteria
+            spec = PropertySpecifications.withCriteria(criteria);
+
+            similarProperties = propertyRepository.findAll(
+                    Specification.where(spec).and(notSameProperty),
+                    PageRequest.of(0, limit)
+            ).getContent();
+        }
+
+        // Convert to DTOs and enrich with favorite info
+        List<PropertyDTO> dtoList = similarProperties.stream()
+                .map(propertyMapper::toDTO)
+                .collect(Collectors.toList());
+
+        // Enrich with favorite info if authenticated
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() &&
+                    !"anonymousUser".equals(authentication.getPrincipal())) {
+                String userEmail = authentication.getName();
+                Set<Long> favoriteIds = favoriteService.getFavoritedPropertyIds(userEmail);
+
+                // Update favorite status
+                dtoList.forEach(dto -> {
+                    dto.setFavorite(favoriteIds.contains(dto.getId()));
+                    dto.setFavoriteCount(favoriteService.getFavoriteCount(dto.getId()));
+                });
+            } else {
+                // Just set favorite counts
+                dtoList.forEach(dto ->
+                        dto.setFavoriteCount(favoriteService.getFavoriteCount(dto.getId())));
+            }
+        } catch (Exception e) {
+            log.warn("Error getting favorite info for similar properties", e);
+        }
+
+        return dtoList;
     }
 }
