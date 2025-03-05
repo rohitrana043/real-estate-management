@@ -1,47 +1,46 @@
 // src/app/properties/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Container,
-  Typography,
-  Box,
-  Grid,
-  Pagination,
-  CircularProgress,
-  Alert,
-  Paper,
-  InputBase,
-  IconButton,
-  Divider,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Slider,
-  TextField,
-} from '@mui/material';
-import { SelectChangeEvent } from '@mui/material/Select';
-import SearchIcon from '@mui/icons-material/Search';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import SortIcon from '@mui/icons-material/Sort';
+import PropertyCard from '@/components/properties/PropertyCard';
 import { useAuth } from '@/contexts/AuthContext';
 import favoritesApi from '@/lib/api/favorites';
-import PropertyCard from '@/components/properties/PropertyCard';
 import { getProperties, searchProperties } from '@/lib/api/properties';
 import {
-  PropertyDTO,
-  PropertySearchCriteria,
-  PagePropertyDTO,
-  SortOption,
-  FilterState,
   DEFAULT_FILTERS,
   DEFAULT_PRICE_RANGE,
-  PropertyType,
+  FilterState,
+  PagePropertyDTO,
+  PropertyDTO,
+  PropertySearchCriteria,
   PropertyStatus,
+  PropertyType,
+  SortOption,
 } from '@/types/property';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import SearchIcon from '@mui/icons-material/Search';
+import SortIcon from '@mui/icons-material/Sort';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Divider,
+  FormControl,
+  Grid,
+  IconButton,
+  InputBase,
+  InputLabel,
+  MenuItem,
+  Pagination,
+  Paper,
+  Select,
+  Slider,
+  Typography,
+} from '@mui/material';
+import { SelectChangeEvent } from '@mui/material/Select';
 import { useSnackbar } from 'notistack';
+import { useEffect, useState } from 'react';
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<PropertyDTO[]>([]);

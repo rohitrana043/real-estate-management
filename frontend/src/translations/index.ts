@@ -24,6 +24,9 @@ export const translations = {
       profile: 'Profile',
       allServices: 'All Services',
       loading: 'Loading',
+      checkoutPortfolio: 'Check out my portfolio',
+      getSourceCode: 'Get source code',
+      specialAnnouncement: 'Special announcement',
     },
     home: {
       title: 'Find Your Dream Property',
@@ -139,6 +142,9 @@ export const translations = {
       profile: 'profil',
       allServices: 'Tous les Services',
       loading: 'chargement',
+      checkoutPortfolio: 'Consultez mon portfolio',
+      getSourceCode: 'Accéder au code source',
+      specialAnnouncement: 'Annonce spéciale',
     },
     home: {
       title: 'Trouvez votre propriété de rêve',

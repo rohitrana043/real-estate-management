@@ -1,24 +1,24 @@
 // src/app/dashboard/users/edit/[id]/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Container,
-  Typography,
-  Paper,
-  Box,
-  Button,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
-import { useParams, useRouter } from 'next/navigation';
-import { useSnackbar } from 'notistack';
+import { withRoleProtection } from '@/components/auth/withRoleProtection';
 import UserForm from '@/components/users/UserForm';
 import authApi from '@/lib/api/auth';
 import { UserDTO } from '@/types/auth';
 import { ROLES } from '@/utils/roleUtils';
-import { withRoleProtection } from '@/components/auth/withRoleProtection';
+import { ArrowBack } from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Paper,
+  Typography,
+} from '@mui/material';
+import { useParams, useRouter } from 'next/navigation';
+import { useSnackbar } from 'notistack';
+import { useEffect, useState } from 'react';
 
 function EditUserPage() {
   const params = useParams();

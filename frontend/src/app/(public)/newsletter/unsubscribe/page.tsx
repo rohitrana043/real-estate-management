@@ -1,26 +1,26 @@
 // src/app/(public)/newsletter/unsubscribe/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import newsletterApi from '@/lib/api/newsletter';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import EmailIcon from '@mui/icons-material/Email';
+import ErrorIcon from '@mui/icons-material/Error';
 import {
-  Box,
-  Container,
-  Typography,
-  TextField,
-  Button,
-  Paper,
-  CircularProgress,
   Alert,
-  Link as MuiLink,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
   Divider,
+  Link as MuiLink,
+  Paper,
+  TextField,
+  Typography,
 } from '@mui/material';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSnackbar } from 'notistack';
-import EmailIcon from '@mui/icons-material/Email';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import newsletterApi from '@/lib/api/newsletter';
+import React, { useEffect, useState } from 'react';
 
 enum UnsubscribeState {
   INITIAL = 'initial',

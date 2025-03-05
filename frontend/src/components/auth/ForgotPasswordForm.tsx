@@ -1,22 +1,23 @@
 // src/components/auth/ForgotPasswordForm.tsx
 'use client';
 
-import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { yupResolver } from '@hookform/resolvers/yup';
 import {
+  Alert,
   Box,
   Button,
+  CircularProgress,
+  Link as MuiLink,
+  Paper,
   TextField,
   Typography,
-  Paper,
-  Link as MuiLink,
-  CircularProgress,
-  Alert,
 } from '@mui/material';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { AxiosError } from 'axios';
 
 const forgotPasswordSchema = yup.object({
   email: yup
@@ -32,6 +33,7 @@ type ForgotPasswordData = {
 export default function ForgotPasswordForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { forgotPassword } = useAuth();
 
   const {
@@ -44,12 +46,48 @@ export default function ForgotPasswordForm() {
 
   const onSubmit = async (data: ForgotPasswordData) => {
     setIsSubmitting(true);
+    setErrorMessage(null);
+
     try {
       await forgotPassword(data.email);
       setSuccess(true);
+    } catch (error) {
+      console.error('Password reset request error:', error);
+
+      if (error instanceof AxiosError) {
+        if (!error.response) {
+          setErrorMessage(
+            'Unable to connect to the server. Please check your internet connection or try again later.'
+          );
+        } else if (error.response.status === 404) {
+          // For security reasons, we typically don't want to reveal if an email exists or not
+          // Instead we show the success message anyway but log the error
+          console.log('Email not found, but showing success for security');
+          setSuccess(true);
+        } else if (error.response.status >= 500) {
+          setErrorMessage(
+            'Server error. Please try again later or contact support if the problem persists.'
+          );
+        } else {
+          setErrorMessage(
+            error.response.data?.message ||
+              'Failed to send reset instructions. Please try again.'
+          );
+        }
+      } else if (error instanceof Error) {
+        setErrorMessage(
+          error.message || 'An unexpected error occurred. Please try again.'
+        );
+      } else {
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCloseErrorAlert = () => {
+    setErrorMessage(null);
   };
 
   return (
@@ -85,11 +123,21 @@ export default function ForgotPasswordForm() {
           password
         </Typography>
 
+        {errorMessage && (
+          <Alert
+            severity="error"
+            onClose={handleCloseErrorAlert}
+            sx={{ mb: 3 }}
+          >
+            {errorMessage}
+          </Alert>
+        )}
+
         {success ? (
           <Box>
             <Alert severity="success" sx={{ mb: 3 }}>
               Password reset instructions have been sent to your email address.
-              Please check your inbox.
+              Please check your inbox and spam folder.
             </Alert>
             <Button
               component={Link}

@@ -1,30 +1,29 @@
 // src/app/(public)/services/page.tsx
 'use client';
 
+import { useSettings } from '@/contexts/SettingsContext';
+import { translations } from '@/translations';
+import ApartmentIcon from '@mui/icons-material/Apartment';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import HouseIcon from '@mui/icons-material/House';
+import SellIcon from '@mui/icons-material/Sell';
 import {
   Box,
-  Container,
-  Typography,
-  Grid,
-  Paper,
+  Button,
   Card,
   CardContent,
   CardMedia,
-  Button,
-  Divider,
+  Container,
+  Grid,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
+  Paper,
+  Typography,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { useSettings } from '@/contexts/SettingsContext';
-import { translations } from '@/translations';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import HouseIcon from '@mui/icons-material/House';
-import SellIcon from '@mui/icons-material/Sell';
-import ApartmentIcon from '@mui/icons-material/Apartment';
-import AssessmentIcon from '@mui/icons-material/Assessment';
 
 export default function ServicesPage() {
   const router = useRouter();

@@ -1,17 +1,17 @@
 // src/app/dashboard/properties/edit/page.tsx
 'use client';
 
-import { useState } from 'react';
-import { Container, Typography, Box, Button, Alert } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
-import { useRouter } from 'next/navigation';
-import { useSnackbar } from 'notistack';
-import PropertySearchForm from '@/components/properties/PropertySearchForm';
+import { withRoleProtection } from '@/components/auth/withRoleProtection';
 import PropertyForm from '@/components/properties/PropertyForm';
+import PropertySearchForm from '@/components/properties/PropertySearchForm';
 import { updateProperty } from '@/lib/api/properties';
 import { PropertyDTO } from '@/types/property';
-import { withRoleProtection } from '@/components/auth/withRoleProtection';
 import { ROLES } from '@/utils/roleUtils';
+import { ArrowBack } from '@mui/icons-material';
+import { Alert, Box, Button, Container, Typography } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { useSnackbar } from 'notistack';
+import { useState } from 'react';
 
 function EditPropertyPage() {
   const router = useRouter();

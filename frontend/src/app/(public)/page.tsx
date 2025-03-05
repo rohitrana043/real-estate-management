@@ -1,37 +1,34 @@
 // src/app/(public)/page.tsx
 'use client';
 
+import PropertyCard from '@/components/properties/PropertyCard';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import favoritesApi from '@/lib/api/favorites';
+import { getProperties } from '@/lib/api/properties';
+import { debugAuthState } from '@/lib/debug/authDebug';
+import { translations } from '@/translations';
+import { PropertyDTO } from '@/types/property';
+import HomeIcon from '@mui/icons-material/Home';
+import SearchIcon from '@mui/icons-material/Search';
+import SupportAgentIcon from '@mui/icons-material/SupportAgent';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import {
+  Alert,
+  Avatar,
   Box,
-  Container,
-  Typography,
   Button,
+  CircularProgress,
+  Container,
   Grid,
   Paper,
-  Card,
-  CardMedia,
-  CardContent,
-  Avatar,
   Rating,
   Stack,
-  CircularProgress,
-  Alert,
+  Typography,
 } from '@mui/material';
-import { useState, useEffect } from 'react';
-import SearchIcon from '@mui/icons-material/Search';
-import HomeIcon from '@mui/icons-material/Home';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import SupportAgentIcon from '@mui/icons-material/SupportAgent';
-import { useSettings } from '@/contexts/SettingsContext';
-import { translations } from '@/translations';
-import { useAuth } from '@/contexts/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
-import { debugAuthState } from '@/lib/debug/authDebug';
-import { getProperties } from '@/lib/api/properties';
-import { PropertyDTO } from '@/types/property';
-import PropertyCard from '@/components/properties/PropertyCard';
-import favoritesApi from '@/lib/api/favorites';
 import { useSnackbar } from 'notistack';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
   const router = useRouter();

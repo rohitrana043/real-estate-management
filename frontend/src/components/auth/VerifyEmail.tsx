@@ -1,17 +1,17 @@
 // src/components/auth/VerifyEmail.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import {
+  Alert,
   Box,
+  Button,
+  CircularProgress,
   Paper,
   Typography,
-  CircularProgress,
-  Button,
-  Alert,
 } from '@mui/material';
-import { useAuth } from '@/contexts/AuthContext';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function VerifyEmail() {
   const [isVerifying, setIsVerifying] = useState(true);

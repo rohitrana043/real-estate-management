@@ -1,22 +1,22 @@
 // src/app/(public)/about/page.tsx
 'use client';
 
-import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Paper,
-  Avatar,
-  Card,
-  CardContent,
-  Divider,
-} from '@mui/material';
 import { useSettings } from '@/contexts/SettingsContext';
 import { translations } from '@/translations';
-import HomeWorkIcon from '@mui/icons-material/HomeWork';
-import HandshakeIcon from '@mui/icons-material/Handshake';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import HandshakeIcon from '@mui/icons-material/Handshake';
+import HomeWorkIcon from '@mui/icons-material/HomeWork';
+import {
+  Avatar,
+  Box,
+  Card,
+  CardContent,
+  Container,
+  Divider,
+  Grid,
+  Paper,
+  Typography,
+} from '@mui/material';
 
 export default function AboutPage() {
   const { language } = useSettings();

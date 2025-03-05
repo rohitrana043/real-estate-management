@@ -1,10 +1,10 @@
 // src/app/(auth)/register/page.tsx
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import RegisterForm from '@/components/auth/RegisterForm';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function RegisterPage() {
   const { isAuthenticated } = useAuth();

@@ -4,8 +4,7 @@ import com.realestate.user.dto.ChangePasswordDTO;
 import com.realestate.user.dto.UserDTO;
 import com.realestate.user.model.Role;
 import com.realestate.user.model.User;
-import com.realestate.user.repository.RoleRepository;
-import com.realestate.user.repository.UserRepository;
+import com.realestate.user.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +24,10 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public UserDTO getCurrentUser() {
@@ -78,6 +81,9 @@ public class UserServiceImpl implements UserService {
         if (userDTO.getAddress() != null) {
             currentUser.setAddress(userDTO.getAddress());
         }
+        if (userDTO.getProfilePicture() != null) {
+            currentUser.setProfilePicture(userDTO.getProfilePicture());
+        }
         // Email cannot be updated
         // Password update should be handled by a separate endpoint with proper validation
 
@@ -102,6 +108,9 @@ public class UserServiceImpl implements UserService {
         if (userDTO.getAddress() != null) {
             user.setAddress(userDTO.getAddress());
         }
+        if (userDTO.getProfilePicture() != null) {
+            user.setProfilePicture(userDTO.getProfilePicture());
+        }
         if (userDTO.isEnabled() != user.isEnabled()) {
             user.setEnabled(userDTO.isEnabled());
         }
@@ -124,13 +133,43 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new RuntimeException("User not found with id: " + id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        String userName = user.getName();
+        String userEmail = user.getEmail();
+
+        try {
+            // 1. Check if current user is trying to delete their own account
+            String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+            boolean isSelfDeletion = userEmail.equals(currentUserEmail);
+
+            if (isSelfDeletion) {
+                // Additional checks or notifications could be added here
+            }
+
+            // 2. Delete email verification tokens
+            emailVerificationTokenRepository.deleteByUserId(id);
+
+            // 3. Delete password reset tokens
+            passwordResetTokenRepository.deleteByUserId(id);
+
+            // 4. Delete refresh tokens
+            refreshTokenRepository.deleteByUserId(id);
+
+            // 5. Delete user
+            userRepository.deleteById(id);
+
+            // 6. Send confirmation email
+            emailService.sendAccountDeletionEmail(userEmail, userName);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not delete user: " + e.getMessage(), e);
         }
-        userRepository.deleteById(id);
     }
 
+    @Override
     public UserDTO convertToDTO(User user) {
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getId());

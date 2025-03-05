@@ -1,11 +1,11 @@
 // src/components/auth/withRoleProtection.tsx
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasRole } from '@/utils/roleUtils';
 import { Box, CircularProgress, Typography } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export function withRoleProtection(
   WrappedComponent: React.ComponentType<any>,

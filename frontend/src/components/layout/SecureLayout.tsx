@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { CircularProgress, Box } from '@mui/material';
 import BaseLayout from './BaseLayout';
+import AnnouncementBanner from './AnnouncementBanner';
 
 export default function SecureLayout({
   children,
@@ -42,5 +43,10 @@ export default function SecureLayout({
     return null;
   }
 
-  return <BaseLayout>{children}</BaseLayout>;
+  return (
+    <BaseLayout>
+      <AnnouncementBanner />
+      {children}
+    </BaseLayout>
+  );
 }

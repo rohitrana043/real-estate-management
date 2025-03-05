@@ -1,14 +1,14 @@
 'use client';
 
-import {
-  Container,
-  Typography,
-  Box,
-  Paper,
-  Breadcrumbs,
-  Link,
-} from '@mui/material';
 import { Home as HomeIcon } from '@mui/icons-material';
+import {
+  Box,
+  Breadcrumbs,
+  Container,
+  Link,
+  Paper,
+  Typography,
+} from '@mui/material';
 import { useEffect } from 'react';
 
 export default function TermsOfServicePage() {

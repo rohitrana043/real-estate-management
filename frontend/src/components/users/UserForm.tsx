@@ -1,45 +1,41 @@
 // src/components/users/UserForm.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useRoles } from '@/hooks/useRoles';
+import { createValidationSchema } from '@/lib/validation/userForm';
+import { UserDTO } from '@/types/auth';
+import { FormInputs, UserSubmitData } from '@/types/userForm';
+import { ROLES } from '@/utils/roleUtils';
+import { yupResolver } from '@hookform/resolvers/yup';
 import {
-  Box,
-  TextField,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText,
-  Grid,
-  Switch,
-  FormControlLabel,
-  Alert,
-  Divider,
-  Typography,
-  Paper,
-  Avatar,
-  IconButton,
-  Stack,
-  Tooltip,
-  styled,
-} from '@mui/material';
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+  PhotoCamera as PhotoCameraIcon,
+  Save as SaveIcon,
+} from '@mui/icons-material';
 import { LoadingButton } from '@mui/lab';
 import {
-  Save as SaveIcon,
-  Close as CloseIcon,
-  PhotoCamera as PhotoCameraIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
+  Avatar,
+  Box,
+  Button,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  FormHelperText,
+  Grid,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  Switch,
+  TextField,
+  Tooltip,
+  Typography,
+  styled,
+} from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { UserDTO } from '@/types/auth';
-import { ROLES } from '@/utils/roleUtils';
-import { useRoles } from '@/hooks/useRoles';
-import { FormInputs, UserRole, UserSubmitData } from '@/types/userForm';
-import { createValidationSchema } from '@/lib/validation/userForm';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 
 // Styled components
 const VisuallyHiddenInput = styled('input')({
@@ -97,7 +93,7 @@ export default function UserForm({
       phone: user?.phone || null,
       roles: user?.roles || [ROLES.CLIENT], // Default to CLIENT role
       address: user?.address || null,
-      enabled: user?.enabled ?? true,
+      enabled: isNewUser ? false : user?.enabled ?? true, // Default to false for new users
       password: null,
       confirmPassword: null,
       profilePicture: null,
@@ -113,14 +109,17 @@ export default function UserForm({
         phone: user.phone || null,
         roles: user?.roles || [ROLES.CLIENT], // Default to CLIENT role
         address: user.address || null,
-        enabled: user.enabled ?? true,
+        enabled: user.enabled ?? true, // Use existing value for edit
         password: null,
         confirmPassword: null,
         profilePicture: null,
       });
       setProfileImage(user.profilePicture || null);
+    } else {
+      // For new user, default to inactive
+      setValue('enabled', false);
     }
-  }, [user, reset]);
+  }, [user, reset, setValue]);
 
   // Handle image upload
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

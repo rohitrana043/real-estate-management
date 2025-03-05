@@ -1,22 +1,22 @@
 // src/app/dashboard/users/register/page.tsx
 'use client';
 
-import { useState } from 'react';
-import {
-  Container,
-  Typography,
-  Paper,
-  Box,
-  Button,
-  Alert,
-} from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
-import { useRouter } from 'next/navigation';
-import UserForm from '@/components/users/UserForm';
 import { withRoleProtection } from '@/components/auth/withRoleProtection';
-import { ROLES } from '@/utils/roleUtils';
+import UserForm from '@/components/users/UserForm';
 import { useUsers } from '@/hooks/useUsers';
 import type { UserDTO } from '@/types/auth';
+import { ROLES } from '@/utils/roleUtils';
+import { ArrowBack } from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
+  Container,
+  Paper,
+  Typography,
+} from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 function AddUserPage() {
   const router = useRouter();

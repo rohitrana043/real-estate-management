@@ -1,40 +1,39 @@
 // src/app/(public)/services/sell/page.tsx
 'use client';
 
+import { useSettings } from '@/contexts/SettingsContext';
+import { translations } from '@/translations';
+import BusinessIcon from '@mui/icons-material/Business';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import EqualizerIcon from '@mui/icons-material/Equalizer';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import SellIcon from '@mui/icons-material/Sell';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
-  Container,
-  Typography,
-  Grid,
-  Paper,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Button,
   Card,
   CardContent,
   CardMedia,
+  Container,
   Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Stepper,
+  Grid,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Paper,
   Step,
-  StepLabel,
   StepContent,
+  StepLabel,
+  Stepper,
+  Typography,
 } from '@mui/material';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSettings } from '@/contexts/SettingsContext';
-import { translations } from '@/translations';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import SellIcon from '@mui/icons-material/Sell';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import BusinessIcon from '@mui/icons-material/Business';
-import EqualizerIcon from '@mui/icons-material/Equalizer';
 
 export default function SellPropertyPage() {
   const router = useRouter();

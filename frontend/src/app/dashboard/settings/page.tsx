@@ -1,36 +1,31 @@
 // src/app/dashboard/settings/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Container,
-  Typography,
-  Box,
-  Paper,
-  Grid,
-  Button,
-  Avatar,
-  IconButton,
-  Divider,
-  Tabs,
-  Tab,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-} from '@mui/material';
-import {
-  CameraAlt as CameraIcon,
-  DeleteForever as DeleteIcon,
-  SupervisorAccount as AdminIcon,
-} from '@mui/icons-material';
-import { useSnackbar } from 'notistack';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { DeleteForever as DeleteIcon } from '@mui/icons-material';
+import {
+  Avatar,
+  Box,
+  Button,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
+  Grid,
+  Paper,
+  Tab,
+  Tabs,
+  Typography,
+} from '@mui/material';
+import { useSnackbar } from 'notistack';
+import { useEffect, useState } from 'react';
 
-import ProfileForm from '@/components/profile/ProfileForm';
 import ChangePasswordForm from '@/components/profile/ChangePasswordForm';
+import ProfileForm from '@/components/profile/ProfileForm';
 import ProfileLoading from '@/components/profile/ProfileLoading';
 
 interface TabPanelProps {
@@ -120,7 +115,7 @@ export default function DashboardSettingsPage() {
               }}
             >
               <Avatar
-                src={user.profilePicture}
+                src={user.profilePicture || undefined}
                 sx={{
                   width: 150,
                   height: 150,

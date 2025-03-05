@@ -1,42 +1,41 @@
 // src/app/(public)/contact/page.tsx
 'use client';
 
+import GoogleMap from '@/components/maps/GoogleMap';
+import { useSettings } from '@/contexts/SettingsContext';
+import { useForm } from '@/hooks/useForm';
+import contactApi, { ContactFormData } from '@/lib/api/contact';
+import { contactFormSchema } from '@/lib/validation/contact';
+import { translations } from '@/translations';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import EmailIcon from '@mui/icons-material/Email';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import PhoneIcon from '@mui/icons-material/Phone';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
   Box,
-  Container,
-  Typography,
-  Grid,
-  Paper,
-  TextField,
   Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Card,
   CardContent,
   CircularProgress,
+  Container,
+  FormControl,
   FormHelperText,
-  Alert,
-  Snackbar,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { useState } from 'react';
-import { useSettings } from '@/contexts/SettingsContext';
-import { useSnackbar } from 'notistack';
-import { translations } from '@/translations';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import PhoneIcon from '@mui/icons-material/Phone';
-import EmailIcon from '@mui/icons-material/Email';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import GoogleMap from '@/components/maps/GoogleMap';
-import contactApi, { ContactFormData } from '@/lib/api/contact';
-import { contactFormSchema } from '@/lib/validation/contact';
-import { useForm } from '@/hooks/useForm';
 import { AxiosError } from 'axios';
+import { useSnackbar } from 'notistack';
+import { useState } from 'react';
 
 export default function ContactPage() {
   const { language } = useSettings();

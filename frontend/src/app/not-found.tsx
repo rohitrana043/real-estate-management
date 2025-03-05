@@ -1,16 +1,16 @@
 // src/app/not-found.tsx
 'use client';
 
+import { Home as HomeIcon } from '@mui/icons-material';
 import {
-  Container,
   Box,
-  Typography,
   Button,
-  useTheme,
+  Container,
+  Typography,
   useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { Home as HomeIcon } from '@mui/icons-material';
 
 export default function NotFoundPage() {
   const router = useRouter();

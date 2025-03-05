@@ -1,37 +1,36 @@
 // src/app/(public)/services/analysis/page.tsx
 'use client';
 
+import { useSettings } from '@/contexts/SettingsContext';
+import { translations } from '@/translations';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import PeopleIcon from '@mui/icons-material/People';
+import SearchIcon from '@mui/icons-material/Search';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
-  Container,
-  Typography,
-  Grid,
-  Paper,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Button,
   Card,
   CardContent,
   CardMedia,
+  Container,
   Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Grid,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+  Typography,
 } from '@mui/material';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSettings } from '@/contexts/SettingsContext';
-import { translations } from '@/translations';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import SearchIcon from '@mui/icons-material/Search';
-import PeopleIcon from '@mui/icons-material/People';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
 
 export default function MarketAnalysisPage() {
   const router = useRouter();

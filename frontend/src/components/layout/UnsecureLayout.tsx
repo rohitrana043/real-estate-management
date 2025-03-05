@@ -4,6 +4,7 @@
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import BaseLayout from './BaseLayout';
+import AnnouncementBanner from './AnnouncementBanner';
 
 export default function UnsecureLayout({
   children,
@@ -12,6 +13,7 @@ export default function UnsecureLayout({
 }) {
   return (
     <BaseLayout>
+      <AnnouncementBanner />
       <Navbar />
       {children}
       <Footer />

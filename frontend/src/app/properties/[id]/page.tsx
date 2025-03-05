@@ -1,51 +1,50 @@
 // src/app/properties/[id]/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import FavoriteButton from '@/components/properties/FavoriteButton';
+import PropertyFavoritesStats from '@/components/properties/PropertyFavoritesStats';
+import { useAuth } from '@/contexts/AuthContext';
+import { getProperty, getSimilarProperties } from '@/lib/api/properties';
+import { PropertyDTO } from '@/types/property';
 import {
-  Container,
-  Typography,
-  Box,
-  Grid,
-  CircularProgress,
+  ArrowBack,
+  BathtubOutlined,
+  BedOutlined,
+  CalendarMonth,
+  DirectionsCarOutlined,
+  Email,
+  HomeOutlined,
+  LocalHospitalOutlined,
+  LocationOnOutlined,
+  ParkOutlined,
+  Phone,
+  RestaurantOutlined,
+  SchoolOutlined,
+  Share,
+  SquareFootOutlined,
+} from '@mui/icons-material';
+import {
   Alert,
-  Paper,
+  Box,
   Button,
   Chip,
+  CircularProgress,
+  Container,
   Divider,
+  Grid,
   IconButton,
-  Tab,
-  Tabs,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
+  Paper,
+  Tab,
+  Tabs,
+  Typography,
 } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
-import { getProperty, getSimilarProperties } from '@/lib/api/properties';
-import { PropertyDTO } from '@/types/property';
-import FavoriteButton from '@/components/properties/FavoriteButton';
-import PropertyFavoritesStats from '@/components/properties/PropertyFavoritesStats';
-import {
-  BedOutlined,
-  BathtubOutlined,
-  SquareFootOutlined,
-  HomeOutlined,
-  LocationOnOutlined,
-  DirectionsCarOutlined,
-  SchoolOutlined,
-  LocalHospitalOutlined,
-  RestaurantOutlined,
-  ParkOutlined,
-  ArrowBack,
-  Share,
-  CalendarMonth,
-  Phone,
-  Email,
-} from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import { useAuth } from '@/contexts/AuthContext';
-import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 interface TabPanelProps {
   children?: React.ReactNode;

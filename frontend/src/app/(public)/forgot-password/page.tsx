@@ -1,10 +1,10 @@
 // src/app/(auth)/forgot-password/page.tsx
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import ForgotPasswordForm from '@/components/auth/ForgotPasswordForm';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function ForgotPasswordPage() {
   const { isAuthenticated } = useAuth();

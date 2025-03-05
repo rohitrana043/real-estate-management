@@ -1,35 +1,35 @@
 // src/components/dashboard/DashboardSidebar.tsx
 'use client';
 
-import { useState } from 'react';
+import { dashboardRoutes } from '@/config/dashboardRoutes';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { translations } from '@/translations';
+import { hasRole } from '@/utils/roleUtils';
+import {
+  KeyboardDoubleArrowRight as CollapseIcon,
+  ExpandLess,
+  ExpandMore,
+  Logout as LogoutIcon,
+  Menu as MenuIcon,
+} from '@mui/icons-material';
 import {
   Box,
+  Collapse,
   Drawer,
+  IconButton,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Tooltip,
   Typography,
   useTheme,
-  Collapse,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
-import {
-  ExpandLess,
-  ExpandMore,
-  Menu as MenuIcon,
-  KeyboardDoubleArrowRight as CollapseIcon,
-  Logout as LogoutIcon,
-} from '@mui/icons-material';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { useSettings } from '@/contexts/SettingsContext';
-import { translations } from '@/translations';
-import { dashboardRoutes } from '@/config/dashboardRoutes';
-import { hasRole } from '@/utils/roleUtils';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 65;

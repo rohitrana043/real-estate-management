@@ -1,31 +1,34 @@
 // src/components/auth/RegisterForm.tsx
 'use client';
 
-import { useState } from 'react';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Paper,
-  Link as MuiLink,
-  InputAdornment,
-  IconButton,
-  CircularProgress,
-  Grid,
-} from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { registerSchema } from '@/lib/validation/auth';
-import { RegisterDTO } from '@/lib/api/auth';
+import { RegisterDTO } from '@/types/auth';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Link as MuiLink,
+  Paper,
+  TextField,
+  Typography,
+} from '@mui/material';
+import Link from 'next/link';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { AxiosError } from 'axios';
 
 export default function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { register: registerUser } = useAuth();
 
   const {
@@ -38,13 +41,49 @@ export default function RegisterForm() {
 
   const onSubmit = async (data: RegisterDTO & { confirmPassword: string }) => {
     setIsSubmitting(true);
+    setErrorMessage(null);
+
     try {
       // Remove confirmPassword before sending to API
       const { confirmPassword, ...registerData } = data;
       await registerUser(registerData);
+    } catch (error) {
+      console.error('Registration error:', error);
+
+      // Handle different types of errors
+      if (error instanceof AxiosError) {
+        if (!error.response) {
+          setErrorMessage(
+            'Unable to connect to the server. Please check your internet connection or try again later.'
+          );
+        } else if (error.response.status === 409) {
+          setErrorMessage(
+            'This email is already registered. Please use a different email or try to log in.'
+          );
+        } else if (error.response.status >= 500) {
+          setErrorMessage(
+            'Server error. Please try again later or contact support if the problem persists.'
+          );
+        } else {
+          setErrorMessage(
+            error.response.data?.message ||
+              'An unexpected error occurred during registration. Please try again.'
+          );
+        }
+      } else if (error instanceof Error) {
+        setErrorMessage(
+          error.message || 'An unexpected error occurred. Please try again.'
+        );
+      } else {
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCloseErrorAlert = () => {
+    setErrorMessage(null);
   };
 
   return (
@@ -78,6 +117,17 @@ export default function RegisterForm() {
         >
           Join our community and start exploring properties
         </Typography>
+
+        {/* Error Alert */}
+        {errorMessage && (
+          <Alert
+            severity="error"
+            onClose={handleCloseErrorAlert}
+            sx={{ mb: 3 }}
+          >
+            {errorMessage}
+          </Alert>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <Grid container spacing={2}>

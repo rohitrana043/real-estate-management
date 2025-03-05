@@ -1,55 +1,56 @@
 // src/app/dashboard/users/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { withRoleProtection } from '@/components/auth/withRoleProtection';
+import { useUsers } from '@/hooks/useUsers';
+import { useAuth } from '@/contexts/AuthContext';
+import { UserDTO } from '@/types/auth';
+import { ROLES } from '@/utils/roleUtils';
 import {
-  Container,
-  Typography,
+  AdminPanelSettings as AdminIcon,
+  AccountCircle as AgentIcon,
+  Person as ClientIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  FilterList as FilterIcon,
+  PersonAdd as PersonAddIcon,
+  Search as SearchIcon,
+} from '@mui/icons-material';
+import {
+  Alert,
   Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
-  TableRow,
-  IconButton,
-  Button,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TablePagination,
-  CircularProgress,
-  Alert,
+  TableRow,
   TextField,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Grid,
-  Stack,
-  Card,
-  CardContent,
+  Typography,
 } from '@mui/material';
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Add as AddIcon,
-  Search as SearchIcon,
-  FilterList as FilterIcon,
-  AdminPanelSettings as AdminIcon,
-  AccountCircle as AgentIcon,
-  Person as ClientIcon,
-  PersonAdd as PersonAddIcon,
-} from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
-import { useUsers } from '@/hooks/useUsers';
-import { UserDTO } from '@/types/auth';
-import { ROLES } from '@/utils/roleUtils';
-import { withRoleProtection } from '@/components/auth/withRoleProtection';
+import { useEffect, useState } from 'react';
+import { useSnackbar } from 'notistack';
 
 // Role configuration for displaying role information
 const roleConfig = {
@@ -72,8 +73,10 @@ const roleConfig = {
 
 function UsersManagementPage() {
   const router = useRouter();
+  const { user: currentUser } = useAuth();
   const { users, loading, error, totalUsers, fetchUsers, deleteUser } =
     useUsers();
+  const { enqueueSnackbar } = useSnackbar();
 
   // Local state
   const [page, setPage] = useState(0);
@@ -132,12 +135,29 @@ function UsersManagementPage() {
 
   // Handle delete dialog
   const handleDeleteClick = (user: UserDTO) => {
+    // Prevent admin from deleting their own account
+    if (currentUser && user.id === currentUser.id) {
+      enqueueSnackbar('You cannot delete your own account', {
+        variant: 'warning',
+      });
+      return;
+    }
+
     setUserToDelete(user);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
     if (!userToDelete) return;
+
+    // Double-check to prevent deleting own account
+    if (currentUser && userToDelete.id === currentUser.id) {
+      enqueueSnackbar('You cannot delete your own account', {
+        variant: 'error',
+      });
+      setDeleteDialogOpen(false);
+      return;
+    }
 
     try {
       await deleteUser(userToDelete.id);
@@ -359,7 +379,12 @@ function UsersManagementPage() {
                     <IconButton
                       onClick={() => handleDeleteClick(user)}
                       color="error"
-                      title="Delete user"
+                      title={
+                        currentUser && user.id === currentUser.id
+                          ? 'You cannot delete your own account'
+                          : 'Delete user'
+                      }
+                      disabled={!!(currentUser && user.id === currentUser.id)}
                     >
                       <DeleteIcon />
                     </IconButton>
@@ -423,6 +448,14 @@ function UsersManagementPage() {
                 sure there is at least one other admin account available.
               </Alert>
             )}
+            {currentUser &&
+              userToDelete &&
+              userToDelete.id === currentUser.id && (
+                <Alert severity="error">
+                  You cannot delete your own account. This action is restricted
+                  for security reasons.
+                </Alert>
+              )}
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -434,6 +467,13 @@ function UsersManagementPage() {
             color="error"
             variant="contained"
             autoFocus
+            disabled={
+              !!(
+                currentUser &&
+                userToDelete &&
+                userToDelete.id === currentUser.id
+              )
+            }
           >
             Delete User
           </Button>

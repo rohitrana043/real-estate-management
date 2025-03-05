@@ -1,38 +1,38 @@
 // src/app/(public)/services/rent/page.tsx
 'use client';
 
+import { useSettings } from '@/contexts/SettingsContext';
+import { translations } from '@/translations';
+import ApartmentIcon from '@mui/icons-material/Apartment';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import BusinessIcon from '@mui/icons-material/Business';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import PersonIcon from '@mui/icons-material/Person';
+import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
+  Button,
+  Card,
+  CardContent,
   Container,
-  Typography,
+  Divider,
   Grid,
-  Paper,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Button,
-  Card,
-  CardContent,
-  Divider,
+  Paper,
   Tab,
   Tabs,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Typography,
 } from '@mui/material';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSettings } from '@/contexts/SettingsContext';
-import { translations } from '@/translations';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ApartmentIcon from '@mui/icons-material/Apartment';
-import PersonIcon from '@mui/icons-material/Person';
-import BusinessIcon from '@mui/icons-material/Business';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
-import SupportAgentIcon from '@mui/icons-material/SupportAgent';
+import { useState } from 'react';
 
 export default function RentPropertyPage() {
   const router = useRouter();

@@ -1,35 +1,34 @@
 // src/app/(public)/services/buy/page.tsx
 'use client';
 
+import { useSettings } from '@/contexts/SettingsContext';
+import { translations } from '@/translations';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import HandshakeIcon from '@mui/icons-material/Handshake';
+import HomeIcon from '@mui/icons-material/Home';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import SearchIcon from '@mui/icons-material/Search';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
+  Button,
+  Card,
+  CardContent,
   Container,
-  Typography,
+  Divider,
   Grid,
-  Paper,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Button,
-  Card,
-  CardContent,
-  Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Paper,
+  Typography,
 } from '@mui/material';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSettings } from '@/contexts/SettingsContext';
-import { translations } from '@/translations';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import HomeIcon from '@mui/icons-material/Home';
-import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
-import SearchIcon from '@mui/icons-material/Search';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import HandshakeIcon from '@mui/icons-material/Handshake';
 
 export default function BuyPropertyPage() {
   const router = useRouter();

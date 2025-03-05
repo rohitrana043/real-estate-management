@@ -1,36 +1,36 @@
 // src/app/dashboard/favorites/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  CircularProgress,
-  Alert,
-  Pagination,
-  Paper,
-  Button,
-  Card,
-  CardMedia,
-  CardContent,
-  Divider,
-  Chip,
-} from '@mui/material';
-import {
-  BedOutlined,
-  BathtubOutlined,
-  SquareFootOutlined,
-  LocationOnOutlined,
-  FavoriteOutlined,
-  HomeOutlined,
-} from '@mui/icons-material';
+import FavoriteButton from '@/components/properties/FavoriteButton';
 import { useAuth } from '@/contexts/AuthContext';
 import favoritesApi from '@/lib/api/favorites';
-import { useSnackbar } from 'notistack';
-import Link from 'next/link';
-import FavoriteButton from '@/components/properties/FavoriteButton';
 import { PropertyDTO } from '@/types/property';
+import {
+  BathtubOutlined,
+  BedOutlined,
+  FavoriteOutlined,
+  HomeOutlined,
+  LocationOnOutlined,
+  SquareFootOutlined,
+} from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardMedia,
+  Chip,
+  CircularProgress,
+  Divider,
+  Grid,
+  Pagination,
+  Paper,
+  Typography,
+} from '@mui/material';
+import Link from 'next/link';
+import { useSnackbar } from 'notistack';
+import React, { useEffect, useState } from 'react';
 
 export default function FavoritesPage() {
   const { isAuthenticated } = useAuth();

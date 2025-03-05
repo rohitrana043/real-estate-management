@@ -1,16 +1,16 @@
 // src/app/dashboard/properties/add/page.tsx
 'use client';
 
-import { useState } from 'react';
-import { Container, Typography, Box, Alert, Button } from '@mui/material';
+import { withRoleProtection } from '@/components/auth/withRoleProtection';
+import PropertyForm from '@/components/properties/PropertyForm';
+import { createProperty } from '@/lib/api/properties';
+import { PropertyDTO } from '@/types/property';
+import { ROLES } from '@/utils/roleUtils';
 import { ArrowBack } from '@mui/icons-material';
+import { Alert, Box, Button, Container, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
-import PropertyForm from '@/components/properties/PropertyForm';
-import { PropertyDTO } from '@/types/property';
-import { createProperty } from '@/lib/api/properties';
-import { withRoleProtection } from '@/components/auth/withRoleProtection';
-import { ROLES } from '@/utils/roleUtils';
+import { useState } from 'react';
 
 function AddPropertyPage() {
   const router = useRouter();

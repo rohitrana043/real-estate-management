@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend Deployment Guide
 
-## Getting Started
+## Prerequisites
 
-First, run the development server:
+- Docker
+- Kubernetes (Minikube or Kind)
+- kubectl
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Deployment Steps
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Build Docker Image**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+   ```bash
+   docker build -t frontend-image:latest .
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Load Image to Kubernetes Cluster** (if using Kind)
 
-## Learn More
+   ```bash
+   kind load docker-image frontend-image:latest
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. **Apply Kubernetes Configurations**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   kubectl apply -f frontend-deployment.yaml
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. **Verify Deployment**
+   ```bash
+   kubectl get deployments
+   kubectl get services
+   kubectl get pods
+   ```
 
-## Deploy on Vercel
+## Configuration Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- The deployment uses a ConfigMap and Secret to manage environment variables
+- Adjust the replica count, resources, and other settings in the deployment file as needed
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Environment Variables
+
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`: Google Maps API key
+- `NEXT_PUBLIC_GOOGLE_MAPS_ADDRESS`: Default Google Maps address
+- `NEXT_NODE_ENV`: Node environment (production)
+- `NEXT_PUBLIC_API_URL`: Backend API URL
+
+## Troubleshooting
+
+- Check pod logs: `kubectl logs <pod-name>`
+- Describe pods: `kubectl describe pod <pod-name>`

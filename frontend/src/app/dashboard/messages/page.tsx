@@ -1,38 +1,36 @@
 // src/app/dashboard/messages/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
 import {
-  Container,
-  Typography,
-  Box,
-  Grid,
-  Paper,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Avatar,
-  TextField,
-  Button,
-  IconButton,
-  CircularProgress,
-  Badge,
-  InputAdornment,
-  Tab,
-  Tabs,
-} from '@mui/material';
-import {
+  AttachFile as AttachFileIcon,
+  FilterList as FilterListIcon,
+  MoreVert as MoreVertIcon,
   Search as SearchIcon,
   Send as SendIcon,
-  AttachFile as AttachFileIcon,
-  MoreVert as MoreVertIcon,
-  FilterList as FilterListIcon,
-  ArrowBack,
 } from '@mui/icons-material';
+import {
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Grid,
+  IconButton,
+  InputAdornment,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Paper,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 // Types for messages
 interface User {

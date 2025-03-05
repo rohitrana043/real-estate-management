@@ -1,37 +1,37 @@
 // src/app/(public)/newsletter/manage/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import {
-  Container,
-  Typography,
-  Box,
-  Paper,
-  Card,
-  CardContent,
-  Divider,
-  Grid,
-  Switch,
-  FormControlLabel,
-  Button,
-  TextField,
-  CircularProgress,
-  Alert,
-  Tabs,
-  Tab,
-  FormGroup,
-  Checkbox,
-  Radio,
-} from '@mui/material';
-import { useSnackbar } from 'notistack';
 import newsletterApi from '@/lib/api/newsletter';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Checkbox,
+  CircularProgress,
+  Container,
+  Divider,
+  FormControlLabel,
+  FormGroup,
+  Grid,
+  Paper,
+  Radio,
+  Switch,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useSnackbar } from 'notistack';
+import React, { useEffect, useState } from 'react';
 
 interface TabPanelProps {
   children?: React.ReactNode;

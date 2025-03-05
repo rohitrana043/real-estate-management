@@ -1,12 +1,12 @@
 // src/app/dashboard/layout.tsx
 'use client';
 
-import { useEffect } from 'react';
-import { Box, CircularProgress } from '@mui/material';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CommonFooter from '@/components/layout/CommonFooter';
+import { useAuth } from '@/contexts/AuthContext';
+import { Box, CircularProgress } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function DashboardLayout({
   children,

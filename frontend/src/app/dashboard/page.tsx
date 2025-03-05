@@ -1,67 +1,66 @@
 // src/app/dashboard/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { useDashboard } from '@/hooks/useDashboard';
+import { translations } from '@/translations';
+import { isAdminOrAgent } from '@/utils/roleUtils';
 import {
+  Apartment as ApartmentIcon,
+  ArrowDownward as ArrowDownwardIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  AttachMoney as AttachMoneyIcon,
+  BusinessCenter as BusinessCenterIcon,
+  Favorite as FavoriteIcon,
+  Home as HomeIcon,
+  LocationOn as LocationIcon,
+  Message as MessageIcon,
+  Refresh as RefreshIcon,
+  Schedule as ScheduleIcon,
+  TrendingUp as TrendingUpIcon,
+  Visibility as VisibilityIcon,
+} from '@mui/icons-material';
+import {
+  Alert,
+  Avatar,
   Box,
-  Grid,
-  Paper,
-  Typography,
+  Button,
   Card,
   CardContent,
   CardHeader,
-  Avatar,
-  useTheme,
-  Button,
+  Chip,
+  CircularProgress,
+  Divider,
+  Grid,
+  IconButton,
   List,
   ListItem,
-  ListItemText,
   ListItemAvatar,
-  Divider,
-  CircularProgress,
-  Alert,
+  ListItemText,
+  Paper,
   Tab,
   Tabs,
-  IconButton,
-  Chip,
+  Typography,
+  useTheme,
 } from '@mui/material';
+import React, { useState } from 'react';
 import {
-  Home as HomeIcon,
-  Favorite as FavoriteIcon,
-  Message as MessageIcon,
-  Visibility as VisibilityIcon,
-  ArrowUpward as ArrowUpwardIcon,
-  ArrowDownward as ArrowDownwardIcon,
-  Schedule as ScheduleIcon,
-  LocationOn as LocationIcon,
-  TrendingUp as TrendingUpIcon,
-  AttachMoney as AttachMoneyIcon,
-  Apartment as ApartmentIcon,
-  BusinessCenter as BusinessCenterIcon,
-  House as HouseIcon,
-  Refresh as RefreshIcon,
-} from '@mui/icons-material';
-import { useAuth } from '@/contexts/AuthContext';
-import { useSettings } from '@/contexts/SettingsContext';
-import { translations } from '@/translations';
-import { useDashboard } from '@/hooks/useDashboard';
-import { isAdminOrAgent } from '@/utils/roleUtils';
-import {
-  LineChart,
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
   Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
 } from 'recharts';
 
 // Define chart colors

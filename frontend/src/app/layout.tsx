@@ -1,7 +1,7 @@
 // src/app/layout.tsx
+import ClientRootLayout from '@/components/layout/ClientRootLayout';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import ClientRootLayout from '@/components/layout/ClientRootLayout';
 
 // Initialize font
 const inter = Inter({
