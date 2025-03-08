@@ -3,7 +3,7 @@
 
 import BaseLayout from './BaseLayout';
 import AnnouncementBanner from './AnnouncementBanner';
-import Footer from './Footer';
+import Footer from './footer';
 import Navbar from './Navbar';
 
 export default function UnsecureLayout({
