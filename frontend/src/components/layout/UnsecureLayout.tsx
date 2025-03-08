@@ -2,9 +2,9 @@
 'use client';
 
 import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
 import BaseLayout from './BaseLayout';
 import AnnouncementBanner from './AnnouncementBanner';
+import Footer from './Footer';
 
 export default function UnsecureLayout({
   children,
