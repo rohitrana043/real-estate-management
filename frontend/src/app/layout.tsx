@@ -14,6 +14,14 @@ export const metadata: Metadata = {
   title: 'Real Estate Management',
   description:
     'Find your dream property with our comprehensive real estate platform',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-16x16.png', sizes: '16x16' },
+      { url: '/favicon-32x32.png', sizes: '32x32' },
+    ],
+    apple: { url: '/apple-touch-icon.png' },
+  },
 };
 
 export default function RootLayout({

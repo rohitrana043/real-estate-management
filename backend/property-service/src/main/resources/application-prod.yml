@@ -1,0 +1,117 @@
+# backend/property-service/src/main/resources/application-prod.yml
+server:
+  port: 8081
+  shutdown: graceful
+  tomcat:
+    max-threads: ${SERVER_MAX_THREADS:200}
+    connection-timeout: ${SERVER_CONNECTION_TIMEOUT:5000}
+    max-connections: ${SERVER_MAX_CONNECTIONS:10000}
+
+spring:
+  application:
+    name: property-service
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:postgres}:${POSTGRES_PORT:5432}/${POSTGRES_DB:real_estate_property}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_MAX_POOL_SIZE:10}
+      minimum-idle: ${DB_MIN_IDLE:5}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  sql:
+    init:
+      mode: never # Disable SQL initialization in production
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc.batch_size: 50
+        order_inserts: true
+        order_updates: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+  lifecycle:
+    timeout-per-shutdown-phase: ${LIFECYCLE_TIMEOUT:30s}
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterAccess=1h
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${EUREKA_USERNAME:admin}:${EUREKA_PASSWORD:admin123}@${EUREKA_HOST:service-registry}:8761/eureka/
+    fetchRegistry: true
+    registerWithEureka: true
+  instance:
+    preferIpAddress: true
+    instance-id: ${spring.application.name}:${random.uuid}
+    lease-renewal-interval-in-seconds: ${EUREKA_RENEWAL_INTERVAL:30}
+    lease-expiration-duration-in-seconds: ${EUREKA_EXPIRATION_DURATION:90}
+
+aws:
+  access:
+    key:
+      id: ${AWS_ACCESS_KEY_ID}
+  secret:
+    access:
+      key: ${AWS_SECRET_ACCESS_KEY}
+  s3:
+    region: ${AWS_REGION:ca-central-1}
+    bucket:
+      name: ${AWS_S3_BUCKET:real-estate-management-system}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      validate-group-membership: false # Add this line to disable validation
+      group:
+        readiness:
+          include: db,diskSpace
+        liveness:
+          include: ping
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n'
+  level:
+    root: WARN
+    com.realestate: INFO
+    org.hibernate: WARN
+    org.springframework: WARN
+    org.springframework.mail: INFO
+  file:
+    name: ${logging.file.path:/app/logs}/contact-service.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      total-size-cap: 100MB

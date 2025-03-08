@@ -2,13 +2,20 @@ server:
   port: 8081
 
 spring:
+  profiles:
+    active: prod
   application:
     name: property-service
   datasource:
     url: jdbc:postgresql://localhost:5432/real_estate_property
     username: postgres
     password: sqluser
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:db/data.sql
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
     show-sql: true

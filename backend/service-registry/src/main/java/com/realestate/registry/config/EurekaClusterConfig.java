@@ -9,7 +9,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 @Configuration
-//@Profile("prod")
+@Profile("prod")
 public class EurekaClusterConfig {
 
     @Value("${eureka.instance.hostname}")

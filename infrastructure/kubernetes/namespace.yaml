@@ -1,0 +1,7 @@
+# infrastructure/kubernetes/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: real-estate
+  labels:
+    name: real-estate

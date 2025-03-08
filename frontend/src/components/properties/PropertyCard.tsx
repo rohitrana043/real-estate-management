@@ -40,7 +40,7 @@ const PropertyCard = ({
   // Get main image URL
   const getMainImageUrl = (): string => {
     if (!property.images || property.images.length === 0) {
-      return '/images/property-placeholder.jpg';
+      return '/images/properties/property-placeholder.jpg';
     }
 
     const mainImage = property.images.find((img) => img.isMain);

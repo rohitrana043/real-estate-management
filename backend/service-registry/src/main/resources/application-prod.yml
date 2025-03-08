@@ -17,7 +17,18 @@ eureka:
     lease-expiration-duration-in-seconds: 90
 
 logging:
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n'
   level:
+    root: WARN
+    com.realestate: INFO
     com.netflix.eureka: WARN
     com.netflix.discovery: WARN
     org.springframework.security: WARN
+  file:
+    name: ${logging.file.path:/app/logs}/service-registry.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      total-size-cap: 100MB

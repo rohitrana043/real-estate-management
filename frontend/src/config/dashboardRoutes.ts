@@ -21,7 +21,7 @@ export const dashboardRoutes = [
   },
   {
     title: 'Properties',
-    path: '/dashboard/properties',
+    path: '/properties',
     icon: HomeIcon,
     roles: [ROLES.ADMIN, ROLES.AGENT, ROLES.CLIENT],
     children: [

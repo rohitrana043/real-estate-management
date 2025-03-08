@@ -1,0 +1,99 @@
+name: api-gateway
+location: ${AZURE_REGION}
+resourceGroup: ${RESOURCE_GROUP}
+properties:
+  managedEnvironmentId: ${CONTAINER_APP_ENVIRONMENT_ID}
+  configuration:
+    activeRevisionsMode: single
+    ingress:
+      external: true
+      targetPort: 8080
+      transport: http
+      allowInsecure: false
+      traffic:
+        - latestRevision: true
+          weight: 100
+      corsPolicy:
+        allowedOrigins:
+          - https://real-estate-management.netlify.app
+        allowedMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+          - HEAD
+        allowedHeaders:
+          - '*'
+        exposedHeaders:
+          - Authorization
+          - Access-Control-Allow-Origin
+          - Access-Control-Allow-Credentials
+        allowCredentials: true
+        maxAge: 3600
+    registries:
+      - server: ${CONTAINER_REGISTRY_SERVER}
+        identity: ${MANAGED_IDENTITY_ID}
+    secrets:
+      - name: jwt-secret
+        value: ${JWT_SECRET}
+      - name: redis-password
+        value: ${REDIS_PASSWORD}
+      - name: eureka-password
+        value: ${EUREKA_PASSWORD}
+  template:
+    containers:
+      - name: api-gateway
+        image: ${CONTAINER_REGISTRY_SERVER}/api-gateway:${IMAGE_TAG}
+        resources:
+          cpu: 1.0
+          memory: 2Gi
+        env:
+          - name: SPRING_PROFILES_ACTIVE
+            value: 'prod'
+          - name: JWT_SECRET
+            secretRef: jwt-secret
+          - name: REDIS_HOST
+            value: ${REDIS_HOST}
+          - name: REDIS_PASSWORD
+            secretRef: redis-password
+          - name: REDIS_SSL
+            value: 'true'
+          - name: EUREKA_HOST
+            value: ${EUREKA_HOST}
+          - name: EUREKA_PASSWORD
+            secretRef: eureka-password
+          - name: ALLOWED_ORIGINS
+            value: 'https://real-estate-management.netlify.app'
+          - name: SERVER_MAX_THREADS
+            value: '200'
+          - name: JAVA_OPTS
+            value: '-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -Djava.security.egd=file:/dev/./urandom'
+        probes:
+          - type: liveness
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 3
+          - type: readiness
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+    scale:
+      minReplicas: 1
+      maxReplicas: 5
+      rules:
+        - name: http-scale-rule
+          http:
+            metadata:
+              concurrentRequests: '20'
+        - name: cpu-scale-rule
+          custom:
+            type: cpu
+            metadata:
+              type: Utilization
+              value: '70'

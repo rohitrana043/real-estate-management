@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Profile;
 
 @Configuration
 @EnableAspectJAutoProxy
-//@Profile("prod")
+@Profile("prod")
 public class MonitoringConfig {
 
     @Bean

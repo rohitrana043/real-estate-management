@@ -523,33 +523,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (data: LoginDTO) => {
     try {
       const response = await authApi.login(data);
-      setAuthState(response);
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectPath = urlParams.get('from');
 
-      // Validate redirect paths
-      const validateRedirectPath = (path?: string | null) => {
-        return path &&
-          path.startsWith('/') &&
-          !path.startsWith('//') &&
-          !path.includes('://')
-          ? decodeURIComponent(path) // Ensure proper decoding
-          : null;
-      };
+      // Set auth state with more verbose logging
+      console.log('Login successful, setting authentication state');
 
-      // Validate the redirect path
-      const validRedirectPath = validateRedirectPath(redirectPath);
+      // Update tokens and user data
+      localStorage.setItem(STORAGE_KEYS.TOKEN, response.token);
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
+      localStorage.setItem(STORAGE_KEYS.TOKEN_TYPE, response.tokenType);
+      localStorage.setItem(
+        STORAGE_KEYS.TOKEN_EXPIRY,
+        (Date.now() + ACCESS_TOKEN_EXPIRY).toString()
+      );
 
-      // If a valid redirect path exists, use it
-      if (validRedirectPath) {
-        enqueueSnackbar('Successfully logged in', { variant: 'success' });
-        await router.replace(validRedirectPath);
-        return;
-      } else {
-        enqueueSnackbar('Successfully logged in', { variant: 'success' });
-        await router.replace('/dashboard');
-      }
+      // Update activity timestamp
+      updateUserActivity();
+
+      // Set axios default authorization header
+      axios.defaults.headers.common.Authorization = `Bearer ${response.token}`;
+
+      // Set cookie for middleware
+      setCookie('auth-token', response.token, {
+        maxAge: 60 * 60 * 24 * 7,
+        path: '/',
+        sameSite: 'strict',
+      });
+
+      // Finally, update the user state - this triggers the isAuthenticated value
+      setUser(response.user);
+
+      // Notify other tabs about the login
+      const event = new CustomEvent(AUTH_SYNC_EVENT, {
+        detail: {
+          type: 'login',
+          payload: { user: response.user },
+        },
+      });
+      window.dispatchEvent(event);
+
+      enqueueSnackbar('Successfully logged in', { variant: 'success' });
+      console.log('Authentication state set successfully');
     } catch (error: any) {
+      console.error('Login error:', error);
       enqueueSnackbar(error.response?.data?.message || 'Login failed', {
         variant: 'error',
       });

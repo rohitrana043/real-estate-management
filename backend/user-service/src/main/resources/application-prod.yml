@@ -1,0 +1,136 @@
+# backend/user-service/src/main/resources/application-prod.yml
+server:
+  port: 8082
+
+app:
+  url: ${APP_URL:http://localhost:8082}
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  email:
+    from: ${EMAIL_FROM:noreply@realestate.com}
+    verification-url: ${app.frontend-url}/verify-email
+    password-reset-url: ${app.frontend-url}/account/password/reset
+  admin:
+    email: ${ADMIN_EMAIL:admin@realestate.com}
+    password: ${ADMIN_PASSWORD}
+    create: ${CREATE_ADMIN:true}
+
+spring:
+  application:
+    name: user-service
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:postgres}:${POSTGRES_PORT:5432}/${POSTGRES_DB:real_estate_user}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    hikari:
+      connection-timeout: 20000
+      minimum-idle: 5
+      maximum-pool-size: 12
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      auto-commit: true
+      pool-name: UserHikariPool
+    jpa:
+      hibernate:
+        ddl-auto: validate # Use 'validate' in production instead of 'update'
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.PostgreSQLDialect
+          jdbc:
+            batch_size: 50
+          order_inserts: true
+          order_updates: true
+          connection:
+            provider_disables_autocommit: false
+      show-sql: false
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+          ssl:
+            trust: ${MAIL_HOST}
+        transport:
+          protocol: smtp
+        debug: false
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:900000}
+  refresh:
+    expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+email:
+  verification:
+    expiration: ${EMAIL_VERIFICATION_EXPIRATION:86400000}
+  password-reset:
+    expiration: ${PASSWORD_RESET_EXPIRATION:3600000}
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${EUREKA_USERNAME:admin}:${EUREKA_PASSWORD:admin123}@${EUREKA_HOST:service-registry}:8761/eureka/
+    fetchRegistry: true
+    registerWithEureka: true
+  instance:
+    preferIpAddress: true
+    instance-id: ${spring.application.name}:${random.uuid}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      group:
+        readiness:
+          include: db,mail,diskSpace
+        liveness:
+          include: ping
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+    mail:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
+        step: 1m
+
+# Enhanced logging configuration
+logging:
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n'
+  level:
+    root: WARN
+    com.realestate: INFO
+    org.hibernate: WARN
+    org.springframework: WARN
+    org.springframework.security: INFO
+  file:
+    name: ${logging.file.path:/app/logs}/user-service.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      total-size-cap: 100MB

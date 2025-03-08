@@ -1,0 +1,126 @@
+# backend/api-gateway/src/main/resources/application-prod.yml
+server:
+  port: 8080
+  shutdown: graceful
+  tomcat:
+    max-threads: ${SERVER_MAX_THREADS:200}
+    connection-timeout: ${SERVER_CONNECTION_TIMEOUT:5000}
+    max-connections: ${SERVER_MAX_CONNECTIONS:10000}
+
+spring:
+  application:
+    name: api-gateway
+  lifecycle:
+    timeout-per-shutdown-phase: ${LIFECYCLE_TIMEOUT:30s}
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lowerCaseServiceId: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        # - name: RequestRateLimiter
+        #   args:
+        #     redis-rate-limiter.replenishRate: ${RATE_LIMIT_REPLENISH:10}
+        #     redis-rate-limiter.burstCapacity: ${RATE_LIMIT_BURST:20}
+        #     redis-rate-limiter.requestedTokens: 1
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: ${ALLOWED_ORIGINS:https://real-estate-management.netlify.app,http://localhost:3000}
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - HEAD
+            allowedHeaders: '*'
+            exposedHeaders:
+              - Authorization
+              - Access-Control-Allow-Origin
+              - Access-Control-Allow-Credentials
+            allowCredentials: true
+            maxAge: 3600
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:900000}
+  refresh:
+    expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: ${CB_SLIDING_WINDOW_SIZE:10}
+        failureRateThreshold: ${CB_FAILURE_RATE:50}
+        waitDurationInOpenState: ${CB_WAIT_DURATION:5000}
+        permittedNumberOfCallsInHalfOpenState: ${CB_PERMITTED_CALLS:3}
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+    instances:
+      propertyCircuitBreaker:
+        baseConfig: default
+      userCircuitBreaker:
+        baseConfig: default
+      contactCircuitBreaker:
+        baseConfig: default
+      analyticsCircuitBreaker:
+        baseConfig: default
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: ${TIMEOUT_DURATION:3s}
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${EUREKA_USERNAME:admin}:${EUREKA_PASSWORD:admin123}@${EUREKA_HOST:service-registry}:8761/eureka/
+    fetchRegistry: true
+    registerWithEureka: true
+  instance:
+    preferIpAddress: true
+    instance-id: ${spring.application.name}:${random.uuid}
+    lease-renewal-interval-in-seconds: ${EUREKA_RENEWAL_INTERVAL:30}
+    lease-expiration-duration-in-seconds: ${EUREKA_EXPIRATION_DURATION:90}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,diskSpace
+  health:
+    circuitbreakers:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+      environment: prod
+
+# Logging configuration for production
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: WARN
+    reactor.netty: WARN
+    com.realestate.gateway: INFO
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
+  file:
+    name: ${logging.file.path:/app/logs}/${spring.application.name}.log
+    max-size: ${LOG_FILE_MAX_SIZE:10MB}
+    max-history: ${LOG_FILE_MAX_HISTORY:7}
+    total-size-cap: ${LOG_TOTAL_SIZE_CAP:100MB}

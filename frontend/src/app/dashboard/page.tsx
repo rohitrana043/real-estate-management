@@ -504,7 +504,7 @@ const PropertiesOverview: React.FC = () => {
           showManageButton && (
             <Button
               color="primary"
-              href="/dashboard/properties"
+              href="/dashboard/properties/edit"
               variant="contained"
               sx={{ borderRadius: 8 }}
             >

@@ -1,6 +1,6 @@
 spring:
   application:
-    name: service-registry-${EUREKA_NODE_ID:node1}
+    name: service-registry
   security:
     user:
       name: ${EUREKA_USERNAME}
@@ -12,8 +12,6 @@ eureka:
     renewalPercentThreshold: 0.85
     responseCacheUpdateIntervalMs: 3000
     responseCacheAutoExpirationInSeconds: 180
-    peerEurekaNodesUpdateIntervalMs: 30000
-    numberRegistrySyncRetries: 5
   client:
     registerWithEureka: true
     fetchRegistry: true
@@ -21,37 +19,31 @@ eureka:
       defaultZone: ${EUREKA_PEER_URLS}
   instance:
     hostname: ${EUREKA_INSTANCE_HOSTNAME}
-    preferIpAddress: false
+    preferIpAddress: true
+    instanceId: ${spring.application.name}:${server.port}:${random.uuid}
     lease-renewal-interval-in-seconds: 30
     lease-expiration-duration-in-seconds: 90
-    metadataMap:
-      nodeId: ${EUREKA_NODE_ID:node1}
-      zone: ${EUREKA_ZONE:zone1}
+    secure-port-enabled: true
+    non-secure-port-enabled: false
+    securePort: ${server.port}
+    statusPageUrl: https://${eureka.instance.hostname}/actuator/info
+    healthCheckUrl: https://${eureka.instance.hostname}/actuator/health
+    homePageUrl: https://${eureka.instance.hostname}/
 
 management:
   endpoints:
     web:
       exposure:
-        include: '*'
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: when_authorized
       roles: ADMIN
   metrics:
     tags:
-      node_id: ${EUREKA_NODE_ID:node1}
-      zone: ${EUREKA_ZONE:zone1}
+      application: ${spring.application.name}
+      instance_id: ${eureka.instance.instanceId}
     export:
       prometheus:
         enabled: true
         step: 1m
-
-logging:
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: /var/log/eureka/${spring.application.name}.log
-  logback:
-    rollingpolicy:
-      max-file-size: 10MB
-      max-history: 7

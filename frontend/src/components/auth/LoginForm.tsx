@@ -53,9 +53,6 @@ export default function LoginForm() {
     try {
       await login(data);
     } catch (error) {
-      console.error('Login error:', error);
-
-      // Handle different types of errors
       if (error instanceof AxiosError) {
         if (!error.response) {
           setErrorMessage(

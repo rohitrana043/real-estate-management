@@ -1,223 +1,419 @@
-version: '3.8'
-
+# docker-compose.yml
 services:
-  # Database Services
-  postgres-user:
+  # Infrastructure services
+  postgres:
     image: postgres:15-alpine
-    container_name: postgres-user
-    environment:
-      POSTGRES_DB: real_estate_user
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: sqluser
+    container_name: postgres
     ports:
-      - "5432:5432"
+      - '5431:5432'
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_MULTIPLE_DATABASES=real_estate_user,real_estate_property,real_estate_contact,real_estate_analytics
     volumes:
-      - postgres-user-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/docker/init-scripts:/docker-entrypoint-initdb.d
     networks:
-      - real-estate-network
+      - backend-network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
-
-  postgres-property:
-    image: postgres:15-alpine
-    container_name: postgres-property
-    environment:
-      POSTGRES_DB: real_estate_property
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: sqluser
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres-property-data:/var/lib/postgresql/data
-    networks:
-      - real-estate-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-analytics:
-    image: postgres:15-alpine
-    container_name: postgres-analytics
-    environment:
-      POSTGRES_DB: real_estate_analytics
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: sqluser
-    ports:
-      - "5434:5432"
-    volumes:
-      - postgres-analytics-data:/var/lib/postgresql/data
-    networks:
-      - real-estate-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     ports:
-      - "6379:6379"
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
     networks:
-      - real-estate-network
+      - backend-network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-  # Service Registry (Eureka)
+  # Application services
   service-registry:
     build:
-      context: ./backend/service-registry
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: service-registry/Dockerfile
+    image: rohitrana043/real-estate-service-registry
     container_name: service-registry
-    environment:
-      - EUREKA_USERNAME=admin
-      - EUREKA_PASSWORD=admin123
-      - EUREKA_INSTANCE_HOSTNAME=service-registry
     ports:
-      - "8761:8761"
-    networks:
-      - real-estate-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # API Gateway
-  api-gateway:
-    build:
-      context: ./backend/api-gateway
-      dockerfile: Dockerfile
-    container_name: api-gateway
+      - '8761:8761'
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://admin:admin123@service-registry:8761/eureka/
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
+      - EUREKA_USERNAME=${EUREKA_USERNAME}
+      - EUREKA_PASSWORD=${EUREKA_PASSWORD}
+      - EUREKA_INSTANCE_HOSTNAME=service-registry
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:+ExitOnOutOfMemoryError
+      - LOG_PATH=/app/logs
+    volumes:
+      - service-registry-logs:/app/logs
+    networks:
+      - backend-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:8761/actuator/health',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  api-gateway:
+    build:
+      context: ./backend
+      dockerfile: api-gateway/Dockerfile
+    image: rohitrana043/real-estate-api-gateway
+    container_name: api-gateway
     ports:
-      - "8080:8080"
+      - '8080:8080'
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_USERNAME=${EUREKA_USERNAME}
+      - EUREKA_PASSWORD=${EUREKA_PASSWORD}
+      - EUREKA_HOST=service-registry
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+ExitOnOutOfMemoryError
+      - LOG_PATH=/app/logs
+    volumes:
+      - api-gateway-logs:/app/logs
     depends_on:
       service-registry:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - real-estate-network
+      - backend-network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
-      interval: 10s
-      timeout: 5s
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:8080/actuator/health',
+        ]
+      interval: 30s
+      timeout: 10s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
-  # User Service
   user-service:
     build:
-      context: ./backend/user-service
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: user-service/Dockerfile
+    image: rohitrana043/real-estate-user-service
     container_name: user-service
+    ports:
+      - '8082:8082'
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-user:5432/real_estate_user
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=sqluser
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://admin:admin123@service-registry:8761/eureka/
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=real_estate_user
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - EUREKA_USERNAME=${EUREKA_USERNAME}
+      - EUREKA_PASSWORD=${EUREKA_PASSWORD}
+      - EUREKA_HOST=service-registry
+      - ADMIN_PASSWORD=${POSTGRES_PASSWORD}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - CREATE_ADMIN=${CREATE_ADMIN}
+      - APP_URL=http://localhost:8082
+      - FRONTEND_URL=${FRONTEND_URL}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+ExitOnOutOfMemoryError
+      - LOG_PATH=/app/logs
+    volumes:
+      - user-logs:/app/logs
     depends_on:
       service-registry:
         condition: service_healthy
-      postgres-user:
+      api-gateway:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     networks:
-      - real-estate-network
+      - backend-network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
-      interval: 10s
-      timeout: 5s
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:8082/actuator/health',
+        ]
+      interval: 30s
+      timeout: 10s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
-  # Property Service
   property-service:
     build:
-      context: ./backend/property-service
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: property-service/Dockerfile
+    image: rohitrana043/real-estate-property-service
     container_name: property-service
+    ports:
+      - '8081:8081'
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-property:5432/real_estate_property
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=sqluser
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://admin:admin123@service-registry:8761/eureka/
-      - AWS_ACCESS_KEY_ID=your-access-key
-      - AWS_SECRET_ACCESS_KEY=your-secret-key
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=real_estate_property
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - EUREKA_USERNAME=${EUREKA_USERNAME}
+      - EUREKA_PASSWORD=${EUREKA_PASSWORD}
+      - EUREKA_HOST=service-registry
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+ExitOnOutOfMemoryError
+      - LOG_PATH=/app/logs
+    volumes:
+      - property-logs:/app/logs
     depends_on:
       service-registry:
         condition: service_healthy
-      postgres-property:
+      api-gateway:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     networks:
-      - real-estate-network
+      - backend-network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
-      interval: 10s
-      timeout: 5s
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:8081/actuator/health',
+        ]
+      interval: 30s
+      timeout: 10s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
-  # Analytics Service
   analytics-service:
     build:
-      context: ./backend/analytics-service
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: analytics-service/Dockerfile
+    image: rohitrana043/real-estate-analytics-service
     container_name: analytics-service
+    ports:
+      - '8084:8084'
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-analytics:5432/real_estate_analytics
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=sqluser
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://admin:admin123@service-registry:8761/eureka/
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=real_estate_analytics
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - EUREKA_USERNAME=${EUREKA_USERNAME}
+      - EUREKA_PASSWORD=${EUREKA_PASSWORD}
+      - EUREKA_HOST=service-registry
+      - PROPERTY_SERVICE_URL=http://property-service:8081
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+ExitOnOutOfMemoryError
+      - LOG_PATH=/app/logs
+    volumes:
+      - analytics-logs:/app/logs
     depends_on:
       service-registry:
         condition: service_healthy
-      postgres-analytics:
+      api-gateway:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      property-service:
         condition: service_healthy
     networks:
-      - real-estate-network
+      - backend-network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
-      interval: 10s
-      timeout: 5s
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:8084/actuator/health',
+        ]
+      interval: 30s
+      timeout: 10s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
-  # Frontend
+  contact-service:
+    build:
+      context: ./backend
+      dockerfile: contact-service/Dockerfile
+    image: rohitrana043/real-estate-contact-service
+    container_name: contact-service
+    ports:
+      - '8086:8086'
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=real_estate_contact
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - EUREKA_USERNAME=${EUREKA_USERNAME}
+      - EUREKA_PASSWORD=${EUREKA_PASSWORD}
+      - EUREKA_HOST=service-registry
+      - FRONTEND_URL=${FRONTEND_URL}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+ExitOnOutOfMemoryError
+      - LOG_PATH=/app/logs
+    volumes:
+      - contact-logs:/app/logs
+    depends_on:
+      service-registry:
+        condition: service_healthy
+      api-gateway:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:8086/actuator/health',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+        - NEXT_PUBLIC_GOOGLE_MAPS_ADDRESS=${NEXT_PUBLIC_GOOGLE_MAPS_ADDRESS}
+        - NEXT_NODE_ENV=${NEXT_NODE_ENV}
+    image: rohitrana043/real-estate-frontend
     container_name: frontend
-    environment:
-      - NEXT_PUBLIC_API_URL=http://api-gateway:8080
     ports:
-      - "3000:3000"
+      - '3000:3000'
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+      - NEXT_PUBLIC_GOOGLE_MAPS_ADDRESS=${NEXT_PUBLIC_GOOGLE_MAPS_ADDRESS}
+      - NEXT_NODE_ENV=${NEXT_NODE_ENV}
     depends_on:
       api-gateway:
         condition: service_healthy
     networks:
-      - real-estate-network
+      - backend-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3000/',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-# Volumes
-volumes:
-  postgres-user-data:
-  postgres-property-data:
-  postgres-analytics-data:
-
-# Networks
 networks:
-  real-estate-network:
+  backend-network:
     driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  property-logs:
+  user-logs:
+  contact-logs:
+  analytics-logs:
+  api-gateway-logs:
+  service-registry-logs:

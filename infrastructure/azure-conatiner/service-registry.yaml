@@ -1,0 +1,57 @@
+name: service-registry
+location: eastus
+properties:
+  environmentId: /subscriptions/your-subscription-id/resourceGroups/your-resource-group/providers/Microsoft.App/managedEnvironments/your-environment
+  configuration:
+    activeRevisionsMode: Single
+    secrets:
+      - name: eureka-username
+        value: your-secure-username
+      - name: eureka-password
+        value: your-secure-password
+    ingress:
+      external: true
+      targetPort: 8761
+      transport: http
+      allowInsecure: false
+  template:
+    containers:
+      - image: your-container-registry.azurecr.io/service-registry:latest
+        name: service-registry
+        env:
+          - name: EUREKA_USERNAME
+            secretRef: eureka-username
+          - name: EUREKA_PASSWORD
+            secretRef: eureka-password
+          - name: EUREKA_INSTANCE_HOSTNAME
+            value: service-registry.azurecontainerapps.io
+          - name: JAVA_OPTS
+            value: '-Xms512m -Xmx1024m'
+        resources:
+          cpu: 1.0
+          memory: 2Gi
+        probes:
+          - type: Liveness
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          - type: Readiness
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+    scale:
+      minReplicas: 2
+      maxReplicas: 4
+      rules:
+        - name: http-scale-rule
+          http:
+            metadata:
+              concurrentRequests: '100'

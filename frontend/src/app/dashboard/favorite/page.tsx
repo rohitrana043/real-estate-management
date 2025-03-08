@@ -117,7 +117,7 @@ export default function FavoritesPage() {
   // Get main image URL
   const getMainImageUrl = (property: PropertyDTO): string => {
     if (!property.images || property.images.length === 0) {
-      return '/images/property-placeholder.jpg';
+      return '/images/properties/property-placeholder.jpg';
     }
 
     const mainImage = property.images.find((img) => img.isMain);

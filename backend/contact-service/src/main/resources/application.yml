@@ -7,6 +7,8 @@ app:
     from: noreply@realestate.com
 
 spring:
+  profiles:
+    active: prod
   application:
     name: contact-service
 
@@ -71,8 +73,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"  # Expose all endpoints
-      base-path: /actuator  # Base path for actuator endpoints
+        include: '*' # Expose all endpoints
+      base-path: /actuator # Base path for actuator endpoints
   endpoint:
     health-ui:
       enabled: true
@@ -96,9 +98,9 @@ management:
       application: ${spring.application.name}
   health:
     mail:
-      enabled: true  # Enable email health check
+      enabled: true # Enable email health check
     db:
-      enabled: true  # Enable database health check
+      enabled: true # Enable database health check
 
 logging:
   level:

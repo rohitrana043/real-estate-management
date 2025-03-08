@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  profiles:
+    active: prod
   application:
     name: api-gateway
   data:
@@ -20,11 +22,11 @@ spring:
       default-filters:
         #        - RemoveRequestHeader=Cookie # Security measure
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
-        - name: RequestRateLimiter
-          args:
-            redis-rate-limiter.replenishRate: 10
-            redis-rate-limiter.burstCapacity: 20
-            redis-rate-limiter.requestedTokens: 1
+        # - name: RequestRateLimiter
+        #   args:
+        #     redis-rate-limiter.replenishRate: 10
+        #     redis-rate-limiter.burstCapacity: 20
+        #     redis-rate-limiter.requestedTokens: 1
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -45,7 +47,7 @@ spring:
             maxAge: 3600
 
 jwt:
-  secret: yoursecret
+  secret: '5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437'
   expiration: 900000 # 24 hours in milliseconds
   refresh:
     expiration: 604800000 # 7 days

@@ -1,0 +1,91 @@
+name: contact-service
+location: eastus
+properties:
+  environmentId: /subscriptions/your-subscription-id/resourceGroups/your-resource-group/providers/Microsoft.App/managedEnvironments/your-environment
+  configuration:
+    activeRevisionsMode: Single
+    secrets:
+      - name: postgres-user
+        value: your-secure-db-username
+      - name: postgres-password
+        value: your-secure-db-password
+      - name: mail-username
+        value: your-email-username
+      - name: mail-password
+        value: your-email-password
+      - name: eureka-username
+        value: your-eureka-username
+      - name: eureka-password
+        value: your-eureka-password
+    ingress:
+      external: false # Set to false since API Gateway will expose this
+      targetPort: 8086
+      transport: http
+  template:
+    containers:
+      - image: your-container-registry.azurecr.io/contact-service:latest
+        name: contact-service
+        env:
+          - name: POSTGRES_HOST
+            value: your-postgres-server.postgres.database.azure.com
+          - name: POSTGRES_PORT
+            value: '5432'
+          - name: POSTGRES_DB
+            value: real_estate_contact
+          - name: POSTGRES_USER
+            secretRef: postgres-user
+          - name: POSTGRES_PASSWORD
+            secretRef: postgres-password
+          - name: EUREKA_HOST
+            value: service-registry.internal.yourdomain.com
+          - name: EUREKA_USERNAME
+            secretRef: eureka-username
+          - name: EUREKA_PASSWORD
+            secretRef: eureka-password
+          - name: MAIL_HOST
+            value: smtp.office365.com
+          - name: MAIL_PORT
+            value: '587'
+          - name: MAIL_USERNAME
+            secretRef: mail-username
+          - name: MAIL_PASSWORD
+            secretRef: mail-password
+          - name: FRONTEND_URL
+            value: https://your-production-domain.com
+          - name: JAVA_OPTS
+            value: '-Xms512m -Xmx1024m -XX:+ExitOnOutOfMemoryError'
+        resources:
+          cpu: 1.0
+          memory: 2Gi
+        probes:
+          - type: Liveness
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8086
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          - type: Readiness
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8086
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+        volumeMounts:
+          - volumeName: logs
+            mountPath: /var/log/realestate
+    scale:
+      minReplicas: 2
+      maxReplicas: 4
+      rules:
+        - name: http-scale-rule
+          http:
+            metadata:
+              concurrentRequests: '100'
+    volumes:
+      - name: logs
+        storageType: AzureFile
+        storageName: contactlogstorage

@@ -1,0 +1,86 @@
+name: property-service
+location: ${AZURE_REGION}
+resourceGroup: ${RESOURCE_GROUP}
+properties:
+  managedEnvironmentId: ${CONTAINER_APP_ENVIRONMENT_ID}
+  configuration:
+    activeRevisionsMode: single
+    ingress:
+      external: false # Internal service, accessed through API Gateway
+      targetPort: 8081
+      transport: http
+      traffic:
+        - latestRevision: true
+          weight: 100
+    registries:
+      - server: ${CONTAINER_REGISTRY_SERVER}
+        identity: ${MANAGED_IDENTITY_ID}
+    secrets:
+      - name: postgres-password
+        value: ${POSTGRES_PASSWORD}
+      - name: aws-access-key
+        value: ${AWS_ACCESS_KEY_ID}
+      - name: aws-secret-key
+        value: ${AWS_SECRET_ACCESS_KEY}
+      - name: eureka-password
+        value: ${EUREKA_PASSWORD}
+  template:
+    containers:
+      - name: property-service
+        image: ${CONTAINER_REGISTRY_SERVER}/property-service:${IMAGE_TAG}
+        resources:
+          cpu: 1.0
+          memory: 2Gi
+        env:
+          - name: SPRING_PROFILES_ACTIVE
+            value: 'prod'
+          - name: POSTGRES_HOST
+            value: ${POSTGRES_HOST}
+          - name: POSTGRES_PORT
+            value: ${POSTGRES_PORT}
+          - name: POSTGRES_DB
+            value: ${POSTGRES_DB}
+          - name: POSTGRES_USER
+            value: ${POSTGRES_USER}
+          - name: POSTGRES_PASSWORD
+            secretRef: postgres-password
+          - name: AWS_ACCESS_KEY_ID
+            secretRef: aws-access-key
+          - name: AWS_SECRET_ACCESS_KEY
+            secretRef: aws-secret-key
+          - name: AWS_REGION
+            value: ${AWS_REGION}
+          - name: AWS_S3_BUCKET
+            value: ${AWS_S3_BUCKET}
+          - name: EUREKA_HOST
+            value: ${EUREKA_HOST}
+          - name: EUREKA_PASSWORD
+            secretRef: eureka-password
+          - name: SERVER_MAX_THREADS
+            value: '200'
+          - name: JAVA_OPTS
+            value: '-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -Djava.security.egd=file:/dev/./urandom'
+        probes:
+          - type: liveness
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 3
+          - type: readiness
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+    scale:
+      minReplicas: 1
+      maxReplicas: 3
+      rules:
+        - name: cpu-scale-rule
+          custom:
+            type: cpu
+            metadata:
+              type: Utilization
+              value: '70'

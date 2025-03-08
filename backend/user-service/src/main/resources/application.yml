@@ -11,6 +11,8 @@ app:
     password-reset-url: ${app.frontend-url}/account/password/reset
 
 spring:
+  profiles:
+    active: prod
   application:
     name: user-service
   datasource:

@@ -1,0 +1,18 @@
+# infrastructure/kubernetes/config-maps/config-maps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mail-config
+  namespace: real-estate
+data:
+  host: 'smtp.gmail.com'
+  port: '587'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-config
+  namespace: real-estate
+data:
+  region: 'ca-central-1'
+  bucket-name: 'real-estate-management-system-prod'

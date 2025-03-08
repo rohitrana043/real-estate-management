@@ -39,6 +39,13 @@ public class GatewayConfig {
                                         .setName("newsletterCircuitBreaker")
                                         .setFallbackUri("forward:/fallback/contact")))
                         .uri("lb://contact-service"))
+                .route("property-service-public", r -> r
+                        .path("/api/properties", "/api/properties/search") // Only public endpoints
+                        .filters(f -> f
+                                .circuitBreaker(config -> config
+                                        .setName("propertyCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/property")))
+                        .uri("lb://property-service"))
                 .route("property-service", r -> r
                         .path("/api/properties/**")
                         .filters(f -> f

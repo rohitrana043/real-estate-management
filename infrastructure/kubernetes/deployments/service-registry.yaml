@@ -1,0 +1,86 @@
+# infrastructure/kubernetes/deployments/service-registry.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: service-registry
+  namespace: real-estate
+spec:
+  serviceName: service-registry
+  replicas: 2
+  selector:
+    matchLabels:
+      app: service-registry
+  template:
+    metadata:
+      labels:
+        app: service-registry
+    spec:
+      containers:
+        - name: service-registry
+          image: ${YOUR_DOCKER_REGISTRY}/service-registry:latest
+          ports:
+            - containerPort: 8761
+          env:
+            - name: EUREKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: eureka-credentials
+                  key: username
+            - name: EUREKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: eureka-credentials
+                  key: password
+            - name: EUREKA_INSTANCE_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: EUREKA_PEER_1
+              value: service-registry-0.service-registry
+            - name: EUREKA_PEER_2
+              value: service-registry-1.service-registry
+          resources:
+            requests:
+              memory: '512Mi'
+              cpu: '250m'
+            limits:
+              memory: '1Gi'
+              cpu: '500m'
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 60
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-registry
+  namespace: real-estate
+spec:
+  selector:
+    app: service-registry
+  ports:
+    - port: 8761
+      targetPort: 8761
+  clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-registry-lb
+  namespace: real-estate
+spec:
+  selector:
+    app: service-registry
+  ports:
+    - port: 8761
+      targetPort: 8761
+  type: ClusterIP

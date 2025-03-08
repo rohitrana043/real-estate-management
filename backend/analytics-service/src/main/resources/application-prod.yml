@@ -1,26 +1,93 @@
+# backend/analytics-service/src/main/resources/application-prod.yml
 server:
   port: 8084
 
 spring:
+  application:
+    name: analytics-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/real_estate_analytics
-    username: postgres
-    password: sqluser
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
+    url: jdbc:postgresql://${POSTGRES_HOST:postgres}:${POSTGRES_PORT:5432}/${POSTGRES_DB:real_estate_analytics}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    hikari:
+      connection-timeout: 20000
+      minimum-idle: 5
+      maximum-pool-size: 12
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      auto-commit: true
+      pool-name: AnalyticsHikariPool
+    jpa:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        ddl-auto: validate # Use 'validate' in production instead of 'update'
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.PostgreSQLDialect
+          jdbc:
+            batch_size: 50
+          order_inserts: true
+          order_updates: true
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=30m
+
+services:
+  property:
+    url: ${PROPERTY_SERVICE_URL:http://property-service:8081}
 
 eureka:
   client:
-    #    enabled: false
     serviceUrl:
-      defaultZone: http://admin:admin123@localhost:8761/eureka/
+      defaultZone: http://${EUREKA_USERNAME:admin}:${EUREKA_PASSWORD:admin123}@${EUREKA_HOST:service-registry}:8761/eureka/
     fetchRegistry: true
     registerWithEureka: true
   instance:
-    preferIpAddress: false
+    preferIpAddress: true
     instance-id: ${spring.application.name}:${random.uuid}
+
+logging:
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n'
+  level:
+    root: WARN
+    com.realestate: INFO
+    org.hibernate: WARN
+    org.hibernate.SQL: INFO
+    org.springframework: WARN
+  file:
+    name: ${logging.file.path:/app/logs}/analytics-service.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      total-size-cap: 100MB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      group:
+        readiness:
+          include: db,diskSpace
+        liveness:
+          include: ping
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
