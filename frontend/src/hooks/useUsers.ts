@@ -65,20 +65,25 @@ export const useUsers = (): UseUsersReturn => {
       try {
         setLoading(true);
         setError(null);
+
         // For new users, we use the registerSecure endpoint
         const result = await authApi.registerSecure({
           ...userData,
           role: userData.roles?.[0] || ROLES.CLIENT,
         } as any);
 
-        // Refresh the users list only on success
+        // Only execute these lines if registration succeeded
         await fetchUsers();
-
         enqueueSnackbar('User created successfully', { variant: 'success' });
-        return userData as UserDTO;
+        return result; // Return the actual result from API
       } catch (err: any) {
         const errorMessage =
-          err.response?.data?.message || 'Failed to create user';
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          (typeof err.response?.data === 'string' ? err.response.data : null) ||
+          err.message ||
+          'Failed to create user';
+
         setError(errorMessage);
         enqueueSnackbar(errorMessage, { variant: 'error' });
         throw err;
