@@ -66,12 +66,12 @@ export const useUsers = (): UseUsersReturn => {
         setLoading(true);
         setError(null);
         // For new users, we use the registerSecure endpoint
-        await authApi.registerSecure({
+        const result = await authApi.registerSecure({
           ...userData,
           role: userData.roles?.[0] || ROLES.CLIENT,
         } as any);
 
-        // Refresh the users list
+        // Refresh the users list only on success
         await fetchUsers();
 
         enqueueSnackbar('User created successfully', { variant: 'success' });

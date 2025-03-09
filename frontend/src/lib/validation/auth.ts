@@ -36,8 +36,10 @@ export const registerSchema = yup.object({
   phone: yup
     .string()
     .matches(/^\+?[1-9][0-9]{7,14}$/, 'Invalid phone number format')
+    .nullable()
+    .transform((value) => (value === '' ? null : value))
     .optional(),
-  address: yup.string().optional(),
+  address: yup.string().nullable().optional(),
 });
 
 export const passwordResetSchema = yup.object({
@@ -81,6 +83,8 @@ export const secureRegisterSchema = yup
     phoneNumber: yup
       .string()
       .matches(/^\+?[1-9][0-9]{7,14}$/, 'Invalid phone number format')
+      .nullable()
+      .transform((value) => (value === '' ? null : value))
       .optional(),
     role: yup
       .string()
@@ -117,7 +121,8 @@ export const profileUpdateSchema = yup.object({
   phone: yup
     .string()
     .matches(/^\+?[1-9][0-9]{7,14}$/, 'Invalid phone number format')
-    .optional()
-    .nullable(),
-  address: yup.string().optional().nullable(),
+    .nullable()
+    .transform((value) => (value === '' ? null : value))
+    .optional(),
+  address: yup.string().nullable().optional(),
 });
