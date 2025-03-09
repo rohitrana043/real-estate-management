@@ -17,7 +17,7 @@ import java.util.List;
 @Configuration
 @Slf4j
 public class CorsConfig {
-    @Value("${ALLOWED_ORIGINS:https://real-estate-management.netlify.app,http://localhost:3000}")
+    @Value("${app.allowedOrigins:https://real-estatehub.netlify.app,https://real-estatehub.rohitrana.dev,http://localhost:3000}")
     private String allowedOriginsStr;
 
     @Bean

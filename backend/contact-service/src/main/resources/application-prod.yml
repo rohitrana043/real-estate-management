@@ -56,7 +56,7 @@ spring:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://${EUREKA_USERNAME:admin}:${EUREKA_PASSWORD:admin123}@${EUREKA_HOST:service-registry}:8761/eureka/
+      defaultZone: ${EUREKA_PROTOCOL:http}://${EUREKA_USERNAME:admin}:${EUREKA_PASSWORD:admin123}@${EUREKA_HOST:service-registry:8761}/eureka/
     fetchRegistry: true
     registerWithEureka: true
   instance:

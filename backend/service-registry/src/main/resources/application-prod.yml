@@ -9,7 +9,7 @@ eureka:
     renewal-percent-threshold: 0.85
   client:
     serviceUrl:
-      defaultZone: http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@${EUREKA_PEER_1:eureka-1}:8761/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@${EUREKA_PEER_2:eureka-2}:8761/eureka/
+      defaultZone: http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@${EUREKA_PEER_1:eureka}:8761/eureka/
   instance:
     hostname: ${EUREKA_INSTANCE_HOSTNAME:localhost}
     preferIpAddress: false

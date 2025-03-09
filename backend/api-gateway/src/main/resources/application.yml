@@ -6,10 +6,10 @@ spring:
     active: prod
   application:
     name: api-gateway
-  data:
-    redis:
-      host: localhost
-      port: 6379
+  # data:
+  #   redis:
+  #     host: localhost
+  #     port: 6379
   thymeleaf:
     prefix: classpath:/templates/
     suffix: .html

@@ -7,6 +7,9 @@ server:
     connection-timeout: ${SERVER_CONNECTION_TIMEOUT:5000}
     max-connections: ${SERVER_MAX_CONNECTIONS:10000}
 
+app:
+  allowedOrigins: ${ALLOWED_ORIGINS:https://real-estatehub.netlify.app,https://real-estatehub.rohitrana.dev,http://localhost:3000}
+
 spring:
   application:
     name: api-gateway
@@ -28,7 +31,7 @@ spring:
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins: ${ALLOWED_ORIGINS:https://real-estate-management.netlify.app,http://localhost:3000}
+            allowedOrigins: ${ALLOWED_ORIGINS:https://real-estatehub.netlify.app,https://real-estatehub.rohitrana.dev,http://localhost:3000}
             allowedMethods:
               - GET
               - POST
@@ -76,7 +79,7 @@ resilience4j:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://${EUREKA_USERNAME:admin}:${EUREKA_PASSWORD:admin123}@${EUREKA_HOST:service-registry}:8761/eureka/
+      defaultZone: ${EUREKA_PROTOCOL:http}://${EUREKA_USERNAME:admin}:${EUREKA_PASSWORD:admin123}@${EUREKA_HOST:service-registry:8761}/eureka/
     fetchRegistry: true
     registerWithEureka: true
   instance:
@@ -109,18 +112,20 @@ management:
       application: ${spring.application.name}
       environment: prod
 
-# Logging configuration for production
 logging:
-  level:
-    root: INFO
-    org.springframework.cloud.gateway: WARN
-    reactor.netty: WARN
-    com.realestate.gateway: INFO
   pattern:
-    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
-    file: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n'
+  level:
+    root: WARN
+    com.realestate: INFO
+    org.hibernate: WARN
+    org.springframework: WARN
+    org.springframework.mail: INFO
   file:
     name: ${logging.file.path:/app/logs}/${spring.application.name}.log
-    max-size: ${LOG_FILE_MAX_SIZE:10MB}
-    max-history: ${LOG_FILE_MAX_HISTORY:7}
-    total-size-cap: ${LOG_TOTAL_SIZE_CAP:100MB}
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      total-size-cap: 100MB

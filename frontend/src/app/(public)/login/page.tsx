@@ -12,25 +12,39 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [redirectAttempted, setRedirectAttempted] = useState(false);
+  const [redirectCount, setRedirectCount] = useState(0);
 
   useEffect(() => {
-    // Only redirect if authenticated, not loading, and haven't already attempted redirect
-    if (isAuthenticated && !isLoading && !redirectAttempted) {
-      setRedirectAttempted(true);
+    // Only attempt redirect if authenticated and not currently loading
+    if (isAuthenticated && !isLoading) {
+      console.log('Auth state detected: authenticated=true, loading=false');
 
-      const fromPath = searchParams.get('from');
-      if (fromPath) {
-        // Small delay to ensure everything is properly updated before navigation
+      if (redirectCount < 3) {
+        setRedirectCount((prev) => prev + 1);
+        setRedirectAttempted(true);
+
+        const fromPath = searchParams.get('from');
+        const destination = fromPath
+          ? decodeURIComponent(fromPath)
+          : '/dashboard';
+
+        console.log(
+          `Attempting redirect #${redirectCount + 1} to: ${destination}`
+        );
+
         setTimeout(() => {
-          router.push(decodeURIComponent(fromPath));
-        }, 50);
-      } else {
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 50);
+          console.log('Executing router.push to:', destination);
+          router.push(destination);
+
+          // Force a navigation to ensure the redirect happens
+          setTimeout(() => {
+            console.log('Checking if redirect succeeded...');
+            window.location.href = destination;
+          }, 500);
+        }, 300);
       }
     }
-  }, [isAuthenticated, isLoading, router, searchParams, redirectAttempted]);
+  }, [isAuthenticated, isLoading, router, searchParams, redirectCount]);
 
   if (isLoading) {
     return (
