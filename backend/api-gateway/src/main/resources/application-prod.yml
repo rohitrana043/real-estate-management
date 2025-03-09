@@ -31,7 +31,7 @@ spring:
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins: ${ALLOWED_ORIGINS:https://real-estatehub.netlify.app,https://real-estatehub.rohitrana.dev,http://localhost:3000}
+            allowedOrigins: ${ALLOWED_ORIGINS:'*'}
             allowedMethods:
               - GET
               - POST
@@ -95,15 +95,9 @@ management:
         include: health,info,metrics,prometheus
   endpoint:
     health:
-      show-details: when_authorized
+      show-details: always
       probes:
         enabled: true
-      group:
-        readiness:
-          include: readinessState,diskSpace
-  health:
-    circuitbreakers:
-      enabled: true
   metrics:
     export:
       prometheus:
@@ -112,6 +106,7 @@ management:
       application: ${spring.application.name}
       environment: prod
 
+# Logging configuration for production
 logging:
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n'

@@ -28,29 +28,31 @@ public class SecurityConfig {
                 .headers(headers -> headers
                         .frameOptions(frameOptions -> frameOptions
                                 .mode(XFrameOptionsServerHttpHeadersWriter.Mode.DENY))
-                        .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; frame-ancestors 'none'"))
-                        .cache(cache -> cache
-                                .disable())
                 )
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .pathMatchers("/actuator/health/**").permitAll()
-                        .pathMatchers("/actuator/info").permitAll()
-                        .pathMatchers("/actuator/**").hasRole("ADMIN")
-                        .pathMatchers("/",
-                                "/api-docs",
-                                "/api/public/**",
-                                "/api/docs/**",
-                                "/api/auth/**",
-                                "/api/contacts/**",
-                                "/api/newsletter/**",
-                                "/api/account/verify/**",
-                                "/api/properties",
-                                "/api/properties/search",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/fallback/**").permitAll()
+
+                        // Health endpoints
+                        .pathMatchers("/actuator/health/**", "/actuator/info").permitAll()
+
+                        // Public API endpoints
+                        .pathMatchers("/api/auth/**", "/auth/**").permitAll()
+                        .pathMatchers("/api-docs", "/api/public/**", "/api/docs/**").permitAll()
+                        .pathMatchers("/api/contacts/**", "/contacts/**").permitAll()
+                        .pathMatchers("/api/newsletter/**", "/newsletter/**").permitAll()
+                        .pathMatchers("/api/account/verify/**").permitAll()
+
+                        // Public property endpoints - ONLY listing and search, not individual properties
+                        .pathMatchers(HttpMethod.GET, "/api/properties").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/properties/search").permitAll()
+
+                        // Debug endpoints
+                        .pathMatchers("/debug/**").permitAll()
+
+                        // Other static resources
+                        .pathMatchers("/", "/fallback/**", "/error", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
+                        // Everything else needs authentication
                         .anyExchange().authenticated()
                 )
                 .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
@@ -60,14 +62,13 @@ public class SecurityConfig {
     }
 
     /**
-     * Add a production-grade security header filter
+     * Add a security header filter
      */
     @Bean
     public WebFilter securityHeadersFilter() {
         return (exchange, chain) -> {
             exchange.getResponse().getHeaders().add("X-Content-Type-Options", "nosniff");
             exchange.getResponse().getHeaders().add("X-XSS-Protection", "1; mode=block");
-            exchange.getResponse().getHeaders().add("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
             return chain.filter(exchange);
         };
     }

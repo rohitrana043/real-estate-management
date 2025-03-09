@@ -131,14 +131,22 @@ export default function PropertiesPage() {
 
   // Fetch favorite IDs when component mounts and user is logged in
   useEffect(() => {
+    if (!user) return;
+
     const fetchFavoriteIds = async () => {
-      if (user) {
-        try {
-          const ids = await favoritesApi.getFavoriteIds();
+      try {
+        const ids = await favoritesApi.getFavoriteIds();
+        // Ensure we have a valid array
+        if (Array.isArray(ids)) {
           setFavoritePropertyIds(new Set(ids));
-        } catch (error) {
-          console.error('Error fetching favorite IDs:', error);
+        } else {
+          console.warn('Favorites API returned non-array data', ids);
+          setFavoritePropertyIds(new Set());
         }
+      } catch (error) {
+        console.error('Error fetching favorite IDs:', error);
+        // Don't crash the UI if favorites can't be loaded
+        setFavoritePropertyIds(new Set());
       }
     };
 
@@ -181,6 +189,10 @@ export default function PropertiesPage() {
       console.error('Error fetching properties:', err);
       setError('Failed to load properties. Please try again later.');
       enqueueSnackbar('Failed to load properties', { variant: 'error' });
+
+      // Set fallback empty data instead of undefined
+      setProperties([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -280,11 +292,9 @@ export default function PropertiesPage() {
       } else {
         await favoritesApi.addFavorite(propertyId);
         setFavoritePropertyIds((prev) => new Set([...prev, propertyId]));
-        enqueueSnackbar('Added to favorites', { variant: 'success' });
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      enqueueSnackbar('Failed to update favorite status', { variant: 'error' });
     }
   };
 

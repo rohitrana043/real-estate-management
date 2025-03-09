@@ -68,7 +68,9 @@ public class GatewayConfig {
                         .filters(f -> f
                                 .circuitBreaker(config -> config
                                         .setName("analyticsCircuitBreaker")
-                                        .setFallbackUri("forward:/fallback/analytics")))
+                                        .setFallbackUri("forward:/fallback/analytics"))
+                                .filter(authHeaderFilter.apply(new AuthenticationHeaderFilter.Config()))
+                        )
                         .uri("lb://analytics-service"))
                 .build();
     }

@@ -1,5 +1,6 @@
-// src/components/property/PropertyCard.tsx
+// src/components/properties/PropertyCard.tsx
 'use client';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { PropertyDTO } from '@/types/property';
 import {
@@ -25,8 +26,8 @@ import Link from 'next/link';
 
 interface PropertyCardProps {
   property: PropertyDTO;
-  isFavorite: boolean;
-  onToggleFavorite: (propertyId: number) => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (propertyId: number) => void;
 }
 
 const PropertyCard = ({
@@ -44,7 +45,11 @@ const PropertyCard = ({
     }
 
     const mainImage = property.images.find((img) => img.isMain);
-    return mainImage ? mainImage.url : property.images[0].url;
+    return (
+      mainImage?.url ||
+      property.images[0]?.url ||
+      '/images/properties/property-placeholder.jpg'
+    );
   };
 
   // Format price as currency
