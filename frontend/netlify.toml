@@ -17,3 +17,9 @@
   to = "/index.html"
   status = 200
   force = false
+
+[[redirects]]
+  from = "/api/*"
+  to = "http://34.69.232.90/api/:splat"
+  status = 200
+  force = true
