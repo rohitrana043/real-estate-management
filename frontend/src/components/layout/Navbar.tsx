@@ -267,65 +267,34 @@ export default function Navbar() {
                 )
               )}
               <Divider />
-              {!isAuthenticated
-                ? [
-                    <MenuItem key="login" onClick={() => router.push('/login')}>
-                      <Typography textAlign="center">
-                        {t.common.login}
-                      </Typography>
-                    </MenuItem>,
-                    <MenuItem
-                      key="register"
-                      onClick={() => router.push('/register')}
-                    >
-                      <Typography textAlign="center">
-                        {t.common.register}
-                      </Typography>
-                    </MenuItem>,
-                  ]
-                : [
-                    <MenuItem
-                      key="dashboard"
-                      onClick={() => router.push('/dashboard')}
-                    >
-                      <ListItemIcon>
-                        <DashboardIcon fontSize="small" />
-                      </ListItemIcon>
-                      <Typography textAlign="center">
-                        {t.common.dashboard}
-                      </Typography>
-                    </MenuItem>,
-                    ...dashboardRoutes
-                      .filter(
-                        (route) =>
-                          route.roles.some((role) => hasRole(user, role)) &&
-                          route.path !== '/dashboard'
-                      )
-                      .map((route) => (
-                        <MenuItem
-                          key={route.path}
-                          onClick={() => {
-                            handleCloseNavMenu();
-                            router.push(route.path);
-                          }}
-                        >
-                          <ListItemIcon>
-                            <route.icon fontSize="small" />
-                          </ListItemIcon>
-                          <Typography textAlign="center">
-                            {route.title}
-                          </Typography>
-                        </MenuItem>
-                      )),
-                    <MenuItem key="logout" onClick={handleLogout}>
-                      <ListItemIcon>
-                        <LogoutIcon fontSize="small" />
-                      </ListItemIcon>
-                      <Typography textAlign="center">
-                        {t.common.logout}
-                      </Typography>
-                    </MenuItem>,
-                  ]}
+              {!isAuthenticated ? (
+                [
+                  <MenuItem key="login" onClick={() => router.push('/login')}>
+                    <Typography textAlign="center">{t.common.login}</Typography>
+                  </MenuItem>,
+                  <MenuItem
+                    key="register"
+                    onClick={() => router.push('/register')}
+                  >
+                    <Typography textAlign="center">
+                      {t.common.register}
+                    </Typography>
+                  </MenuItem>,
+                ]
+              ) : (
+                // Only show dashboard link in mobile menu, not all dashboard links
+                <MenuItem
+                  key="dashboard"
+                  onClick={() => router.push('/dashboard')}
+                >
+                  <ListItemIcon>
+                    <DashboardIcon fontSize="small" />
+                  </ListItemIcon>
+                  <Typography textAlign="center">
+                    {t.common.dashboard}
+                  </Typography>
+                </MenuItem>
+              )}
             </Menu>
           </Box>
 

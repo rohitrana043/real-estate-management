@@ -12,8 +12,10 @@ import {
   ExpandMore,
   Logout as LogoutIcon,
   Menu as MenuIcon,
+  Home as HomeIcon,
 } from '@mui/icons-material';
 import {
+  AppBar,
   Box,
   Collapse,
   Drawer,
@@ -26,10 +28,12 @@ import {
   Tooltip,
   Typography,
   useTheme,
+  Toolbar,
+  useMediaQuery,
 } from '@mui/material';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 65;
@@ -37,17 +41,26 @@ const COLLAPSED_WIDTH = 65;
 export default function DashboardSidebar() {
   const [open, setOpen] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
   const { user, logout } = useAuth();
   const { language } = useSettings();
   const t = translations[language];
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Filter routes based on user roles
   const authorizedRoutes = dashboardRoutes.filter((route) =>
     route.roles.some((role) => hasRole(user, role))
   );
+
+  // Reset mobile drawer state when screen size changes
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileOpen(false);
+    }
+  }, [isMobile]);
 
   const handleClick = (path: string) => {
     if (!isExpanded) {
@@ -65,6 +78,26 @@ export default function DashboardSidebar() {
     setIsExpanded(!isExpanded);
     if (!isExpanded) {
       setOpen(null);
+    }
+  };
+
+  const handleMobileDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  // Close mobile drawer after navigation on mobile
+  const handleNavigate = (path: string) => {
+    router.push(path);
+    if (isMobile) {
+      setMobileOpen(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+    if (isMobile) {
+      setMobileOpen(false);
     }
   };
 
@@ -101,34 +134,36 @@ export default function DashboardSidebar() {
             RealEstate
           </Typography>
         )}
-        <IconButton
-          onClick={handleDrawerToggle}
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: 2,
-            backgroundColor: 'primary.main',
-            color: 'primary.contrastText',
-            '&:hover': {
-              backgroundColor: 'primary.dark',
-            },
-            transition: theme.transitions.create(
-              ['transform', 'background-color'],
-              {
-                duration: theme.transitions.duration.shorter,
-              }
-            ),
-            ...(isExpanded && {
-              transform: 'rotate(180deg)',
-            }),
-          }}
-        >
-          {isExpanded ? <CollapseIcon /> : <MenuIcon />}
-        </IconButton>
+        {!isMobile && (
+          <IconButton
+            onClick={handleDrawerToggle}
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 2,
+              backgroundColor: 'primary.main',
+              color: 'primary.contrastText',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              },
+              transition: theme.transitions.create(
+                ['transform', 'background-color'],
+                {
+                  duration: theme.transitions.duration.shorter,
+                }
+              ),
+              ...(isExpanded && {
+                transform: 'rotate(180deg)',
+              }),
+            }}
+          >
+            {isExpanded ? <CollapseIcon /> : <MenuIcon />}
+          </IconButton>
+        )}
       </Box>
 
       {/* Navigation List */}
-      <List sx={{ flexGrow: 1 }}>
+      <List sx={{ flexGrow: 1, overflowY: 'auto' }}>
         {authorizedRoutes.map((item) => (
           <Box key={item.path}>
             <ListItem disablePadding>
@@ -139,7 +174,7 @@ export default function DashboardSidebar() {
                     if (item.children) {
                       handleClick(item.path);
                     } else {
-                      router.push(item.path);
+                      handleNavigate(item.path);
                     }
                   }}
                   sx={{
@@ -193,7 +228,7 @@ export default function DashboardSidebar() {
                       <ListItemButton
                         key={child.path}
                         selected={pathname === child.path}
-                        onClick={() => router.push(child.path)}
+                        onClick={() => handleNavigate(child.path)}
                         sx={{
                           pl: 4,
                           '&.Mui-selected': {
@@ -234,7 +269,7 @@ export default function DashboardSidebar() {
         )}
         <Tooltip title={!isExpanded ? 'Logout' : ''} placement="right">
           <ListItemButton
-            onClick={() => logout()}
+            onClick={handleLogout}
             sx={{
               borderRadius: 1,
               minWidth: 0,
@@ -266,33 +301,102 @@ export default function DashboardSidebar() {
   );
 
   return (
-    <Box
-      component="nav"
-      sx={{
-        width: { sm: isExpanded ? DRAWER_WIDTH : COLLAPSED_WIDTH },
-        flexShrink: { sm: 0 },
-      }}
-    >
-      <Drawer
-        variant="permanent"
+    <>
+      {/* Mobile App Bar (only visible on mobile) */}
+      <AppBar
+        position="fixed"
         sx={{
-          display: { xs: 'none', sm: 'block' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: isExpanded ? DRAWER_WIDTH : COLLAPSED_WIDTH,
-            borderRight: `1px solid ${theme.palette.divider}`,
-            bgcolor: 'background.paper',
-            transition: theme.transitions.create('width', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-            overflowX: 'hidden',
-          },
+          display: { sm: 'none' },
+          backgroundColor: 'background.paper',
+          color: 'text.primary',
+          boxShadow: 1,
+          zIndex: theme.zIndex.drawer + 1,
         }}
-        open
       >
-        {drawer}
-      </Drawer>
-    </Box>
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleMobileDrawerToggle}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <HomeIcon sx={{ mr: 1, color: 'primary.main' }} />
+            <Typography
+              variant="h6"
+              noWrap
+              component={Link}
+              href="/"
+              sx={{
+                fontWeight: 700,
+                color: 'primary.main',
+                textDecoration: 'none',
+              }}
+            >
+              RealEstate
+            </Typography>
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* Mobile Nav Drawer */}
+      <Box
+        component="nav"
+        sx={{
+          width: { sm: isExpanded ? DRAWER_WIDTH : COLLAPSED_WIDTH },
+          flexShrink: { sm: 0 },
+        }}
+        aria-label="sidebar navigation"
+      >
+        {/* Mobile drawer (temporary) */}
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleMobileDrawerToggle}
+          ModalProps={{
+            keepMounted: true, // Better performance on mobile
+          }}
+          sx={{
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: DRAWER_WIDTH,
+              borderRight: `1px solid ${theme.palette.divider}`,
+              bgcolor: 'background.paper',
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
+
+        {/* Desktop drawer (permanent) */}
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', sm: 'block' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: isExpanded ? DRAWER_WIDTH : COLLAPSED_WIDTH,
+              borderRight: `1px solid ${theme.palette.divider}`,
+              bgcolor: 'background.paper',
+              transition: theme.transitions.create('width', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+              overflowX: 'hidden',
+            },
+          }}
+          open
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+
+      {/* Spacer to push content below mobile app bar */}
+      <Box sx={{ display: { xs: 'block', sm: 'none' }, height: 64 }} />
+    </>
   );
 }

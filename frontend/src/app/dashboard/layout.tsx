@@ -4,7 +4,7 @@
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CommonFooter from '@/components/layout/CommonFooter';
 import { useAuth } from '@/contexts/AuthContext';
-import { Box, CircularProgress } from '@mui/material';
+import { Box, CircularProgress, useMediaQuery, useTheme } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -15,6 +15,8 @@ export default function DashboardLayout({
 }) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -53,10 +55,19 @@ export default function DashboardLayout({
           minHeight: '100vh',
           bgcolor: 'background.default',
           overflowX: 'hidden',
+          width: { xs: '100%', sm: 'auto' }, // Full width on mobile
         }}
       >
         {/* Main Content */}
-        <Box sx={{ flexGrow: 1, p: 3 }}>{children}</Box>
+        <Box
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            pt: { xs: 4, sm: 3 }, // Extra top padding on mobile to account for AppBar
+          }}
+        >
+          {children}
+        </Box>
 
         {/* Footer */}
         <Box
