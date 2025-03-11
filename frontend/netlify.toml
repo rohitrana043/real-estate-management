@@ -5,11 +5,12 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Handle not found pages
+# API redirects should come first - they're more specific
 [[redirects]]
-  from = "/*"
-  to = "/404.html"
-  status = 404
+  from = "/api/*"
+  to = "http://34.69.232.90/api/:splat"
+  status = 200
+  force = true
 
 # For client-side routing
 [[redirects]]
@@ -18,8 +19,8 @@
   status = 200
   force = false
 
+# Handle not found pages - this should be last
 [[redirects]]
-  from = "/api/*"
-  to = "http://34.69.232.90/api/:splat"
-  status = 200
-  force = true
+  from = "/*"
+  to = "/404.html"
+  status = 404
