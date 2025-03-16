@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import UnsecureLayout from './UnsecureLayout';
 import SettingsDebugger from '@/components/debug/SettingsDebugger';
 import SecureLayout from './SecureLayout';
+import PersistentAnnouncementBanner from './PersistentAnnouncementBanner';
 
 export default function ClientRootLayout({
   children,
@@ -19,6 +20,7 @@ export default function ClientRootLayout({
   return (
     <SettingsProvider>
       <AuthProvider>
+        <PersistentAnnouncementBanner />
         {isDashboard ? (
           <SecureLayout>{children}</SecureLayout>
         ) : (

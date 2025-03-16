@@ -5,6 +5,7 @@ import axios, {
   AxiosResponse,
 } from 'axios';
 import authApi from './auth';
+import { isMockEnabled } from './mockUtil';
 
 const BASE_URL =
   `${process.env.NEXT_PUBLIC_API_URL}/api` || 'http://localhost:8080/api';
@@ -45,9 +46,25 @@ const processQueue = (
   failedQueue = [];
 };
 
+// Log mock mode status on startup
+if (isMockEnabled) {
+  console.log(
+    '[MOCK] Mock API mode is enabled. No real API calls will be made.'
+  );
+} else {
+  console.log('[API] Using real API endpoints:', BASE_URL);
+}
+
 // Request interceptor for adding auth token
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // If mock mode is enabled, we can still let the request go through
+    // (it will be intercepted by withMock before actually being sent)
+    if (isMockEnabled) {
+      // We can add this for debugging purposes
+      config.headers['X-Mock-Mode'] = 'true';
+    }
+
     // Get token from localStorage
     const token = localStorage.getItem('token');
 
@@ -74,6 +91,11 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
+    // If we're in mock mode, don't do token refresh etc.
+    if (isMockEnabled) {
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
     if (!originalRequest) {
       return Promise.reject(error);

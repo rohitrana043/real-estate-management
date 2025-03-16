@@ -7,6 +7,7 @@ import {
   ImageDTO,
 } from '@/types/property';
 import { useRouter } from 'next/navigation';
+import { withMock } from './mockUtil';
 
 const PROPERTIES_ENDPOINT = '/properties';
 
@@ -16,21 +17,35 @@ export const getProperties = async (
   size = 10,
   sort: string[] = ['createdAt,desc']
 ): Promise<PagePropertyDTO> => {
-  const response = await axiosInstance.get(PROPERTIES_ENDPOINT, {
-    params: {
-      page,
-      size,
-      sort: sort.join(','),
+  return withMock(
+    async () => {
+      const response = await axiosInstance.get(PROPERTIES_ENDPOINT, {
+        params: {
+          page,
+          size,
+          sort: sort.join(','),
+        },
+      });
+      return response.data;
     },
-  });
-  return response.data;
+    'properties.getProperties',
+    'getProperties'
+  );
 };
 
 export const getProperty = async (id: number): Promise<PropertyDTO> => {
   try {
-    const token = localStorage.getItem('token');
-    const response = await axiosInstance.get(`${PROPERTIES_ENDPOINT}/${id}`);
-    return response.data;
+    return withMock(
+      async () => {
+        const token = localStorage.getItem('token');
+        const response = await axiosInstance.get(
+          `${PROPERTIES_ENDPOINT}/${id}`
+        );
+        return response.data;
+      },
+      'properties.getProperty',
+      `getProperty(${id})`
+    );
   } catch (error: any) {
     throw error;
   }
@@ -42,15 +57,24 @@ export const searchProperties = async (
   size = 10,
   sort: string[] = ['createdAt,desc']
 ): Promise<PagePropertyDTO> => {
-  const response = await axiosInstance.get(`${PROPERTIES_ENDPOINT}/search`, {
-    params: {
-      ...criteria,
-      page,
-      size,
-      sort: sort.join(','),
+  return withMock(
+    async () => {
+      const response = await axiosInstance.get(
+        `${PROPERTIES_ENDPOINT}/search`,
+        {
+          params: {
+            ...criteria,
+            page,
+            size,
+            sort: sort.join(','),
+          },
+        }
+      );
+      return response.data;
     },
-  });
-  return response.data;
+    'properties.searchProperties',
+    'searchProperties'
+  );
 };
 
 // New endpoint to get similar properties
@@ -59,13 +83,19 @@ export const getSimilarProperties = async (
   limit = 3
 ): Promise<PropertyDTO[]> => {
   try {
-    const response = await axiosInstance.get(
-      `${PROPERTIES_ENDPOINT}/${propertyId}/similar`,
-      {
-        params: { limit },
-      }
+    return withMock(
+      async () => {
+        const response = await axiosInstance.get(
+          `${PROPERTIES_ENDPOINT}/${propertyId}/similar`,
+          {
+            params: { limit },
+          }
+        );
+        return response.data;
+      },
+      'properties.getSimilarProperties',
+      `getSimilarProperties(${propertyId})`
     );
-    return response.data;
   } catch (error: any) {
     console.error('Error fetching similar properties:', error);
     // Return empty array if the endpoint fails or doesn't exist yet
@@ -77,79 +107,121 @@ export const getSimilarProperties = async (
 export const createProperty = async (
   property: PropertyDTO
 ): Promise<PropertyDTO> => {
-  const response = await axiosInstance.post(PROPERTIES_ENDPOINT, property);
-  return response.data;
+  return withMock(
+    async () => {
+      const response = await axiosInstance.post(PROPERTIES_ENDPOINT, property);
+      return response.data;
+    },
+    'properties.createProperty',
+    'createProperty'
+  );
 };
 
 export const updateProperty = async (
   id: number,
   property: PropertyDTO
 ): Promise<PropertyDTO> => {
-  const response = await axiosInstance.put(
-    `${PROPERTIES_ENDPOINT}/${id}`,
-    property
+  return withMock(
+    async () => {
+      const response = await axiosInstance.put(
+        `${PROPERTIES_ENDPOINT}/${id}`,
+        property
+      );
+      return response.data;
+    },
+    'properties.updateProperty',
+    `updateProperty(${id})`
   );
-  return response.data;
 };
 
 export const deleteProperty = async (id: number): Promise<void> => {
-  await axiosInstance.delete(`${PROPERTIES_ENDPOINT}/${id}`);
+  return withMock(
+    async () => {
+      await axiosInstance.delete(`${PROPERTIES_ENDPOINT}/${id}`);
+    },
+    'properties.deleteProperty',
+    `deleteProperty(${id})`
+  );
 };
 
 // Property Images API
 export const getPropertyImages = async (
   propertyId: number
 ): Promise<ImageDTO[]> => {
-  const response = await axiosInstance.get(
-    `${PROPERTIES_ENDPOINT}/${propertyId}/images`
+  return withMock(
+    async () => {
+      const response = await axiosInstance.get(
+        `${PROPERTIES_ENDPOINT}/${propertyId}/images`
+      );
+      return response.data;
+    },
+    'properties.getPropertyImages',
+    `getPropertyImages(${propertyId})`
   );
-  return response.data;
 };
 
 export const uploadImage = async (
   propertyId: number,
   file: File
 ): Promise<ImageDTO> => {
-  const formData = new FormData();
-  formData.append('file', file);
+  return withMock(
+    async () => {
+      const formData = new FormData();
+      formData.append('file', file);
 
-  const response = await axiosInstance.post(
-    `${PROPERTIES_ENDPOINT}/${propertyId}/images`,
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }
+      const response = await axiosInstance.post(
+        `${PROPERTIES_ENDPOINT}/${propertyId}/images`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      return response.data;
+    },
+    'properties.uploadImage',
+    `uploadImage(${propertyId})`
   );
-  return response.data;
 };
 
 export const uploadMultipleImages = async (
   propertyId: number,
   files: File[]
 ): Promise<ImageDTO[]> => {
-  const formData = new FormData();
-  files.forEach((file) => formData.append('files', file));
+  return withMock(
+    async () => {
+      const formData = new FormData();
+      files.forEach((file) => formData.append('files', file));
 
-  const response = await axiosInstance.post(
-    `${PROPERTIES_ENDPOINT}/${propertyId}/images/multiple`,
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }
+      const response = await axiosInstance.post(
+        `${PROPERTIES_ENDPOINT}/${propertyId}/images/multiple`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      return response.data;
+    },
+    'properties.uploadMultipleImages',
+    `uploadMultipleImages(${propertyId})`
   );
-  return response.data;
 };
 
 export const deleteImage = async (
   propertyId: number,
   imageId: number
 ): Promise<void> => {
-  await axiosInstance.delete(
-    `${PROPERTIES_ENDPOINT}/${propertyId}/images/${imageId}`
+  return withMock(
+    async () => {
+      await axiosInstance.delete(
+        `${PROPERTIES_ENDPOINT}/${propertyId}/images/${imageId}`
+      );
+    },
+    'properties.deleteImage',
+    `deleteImage(${propertyId},${imageId})`
   );
 };
 
@@ -157,19 +229,31 @@ export const setMainImage = async (
   propertyId: number,
   imageId: number
 ): Promise<ImageDTO> => {
-  const response = await axiosInstance.put(
-    `${PROPERTIES_ENDPOINT}/${propertyId}/images/${imageId}/main`
+  return withMock(
+    async () => {
+      const response = await axiosInstance.put(
+        `${PROPERTIES_ENDPOINT}/${propertyId}/images/${imageId}/main`
+      );
+      return response.data;
+    },
+    'properties.setMainImage',
+    `setMainImage(${propertyId},${imageId})`
   );
-  return response.data;
 };
 
 export const reorderImages = async (
   propertyId: number,
   imageIds: number[]
 ): Promise<ImageDTO[]> => {
-  const response = await axiosInstance.put(
-    `${PROPERTIES_ENDPOINT}/${propertyId}/images/reorder`,
-    imageIds
+  return withMock(
+    async () => {
+      const response = await axiosInstance.put(
+        `${PROPERTIES_ENDPOINT}/${propertyId}/images/reorder`,
+        imageIds
+      );
+      return response.data;
+    },
+    'properties.reorderImages',
+    `reorderImages(${propertyId})`
   );
-  return response.data;
 };

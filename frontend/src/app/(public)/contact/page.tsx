@@ -127,24 +127,17 @@ export default function ContactPage() {
     {
       icon: <LocationOnIcon fontSize="large" color="primary" />,
       title: 'Our Location',
-      details: [
-        '123 Real Estate St',
-        'Cityville, State 12345',
-        'United States',
-      ],
+      details: ['North York, M2J 1L6', 'Canada'],
     },
     {
       icon: <PhoneIcon fontSize="large" color="primary" />,
       title: 'Phone Numbers',
-      details: [
-        'Main Office: +1 (234) 567-8900',
-        'Customer Support: +1 (234) 567-8901',
-      ],
+      details: ['Main Office: +1 (905) 352-9059'],
     },
     {
       icon: <EmailIcon fontSize="large" color="primary" />,
       title: 'Email Addresses',
-      details: ['info@realestate.com', 'support@realestate.com'],
+      details: ['connect@rohitrana.dev', 'rohit.rana043@gmail.com'],
     },
     {
       icon: <AccessTimeIcon fontSize="large" color="primary" />,

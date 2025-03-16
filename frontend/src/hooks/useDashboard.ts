@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/lib/api/axios'; // Use the configured axiosInstance
+import { withMock } from '@/lib/api/mockUtil';
 
 interface DashboardStats {
   totalViews: number;
@@ -39,21 +40,26 @@ export const useDashboard = () => {
       try {
         setLoading(true);
 
-        // Fetch analytics data from the backend using axiosInstance
-        const analyticsResponse = await axiosInstance.get(
-          '/analytics/dashboard'
+        // Fetch analytics data from the backend using withMock
+        const analyticsData = await withMock(
+          () =>
+            axiosInstance
+              .get('/analytics/dashboard')
+              .then((response) => response.data),
+          'analytics.dashboard',
+          'fetchDashboardStats'
         );
-        const analyticsData = analyticsResponse.data;
 
         // Build dashboard stats from the analytics data
         setStats({
-          totalViews: analyticsData.totalProperties || 0,
+          totalViews: analyticsData.totalViews || 0,
           totalProperties:
+            analyticsData.totalProperties ||
             analyticsData.availableProperties + analyticsData.soldProperties ||
             0,
-          totalFavorites: analyticsData.totalProperties || 0,
-          totalMessages: analyticsData.totalProperties || 0,
-          recentActivity: [
+          totalFavorites: analyticsData.totalFavorites || 0,
+          totalMessages: analyticsData.totalMessages || 0,
+          recentActivity: analyticsData.recentActivity || [
             {
               id: 1,
               type: 'property_view',
@@ -63,25 +69,36 @@ export const useDashboard = () => {
               icon: 'visibility',
             },
           ],
-          propertyStats: {
+          propertyStats: analyticsData.propertyStats || {
             activeListings: analyticsData.availableProperties || 0,
             pendingSales: analyticsData.soldProperties || 0,
             trends: {
               views: {
-                value: 0,
-                isPositive: true,
+                value: analyticsData.propertyStats?.trends?.views?.value || 5,
+                isPositive:
+                  analyticsData.propertyStats?.trends?.views?.isPositive ||
+                  true,
               },
               properties: {
-                value: 0,
-                isPositive: true,
+                value:
+                  analyticsData.propertyStats?.trends?.properties?.value || 8,
+                isPositive:
+                  analyticsData.propertyStats?.trends?.properties?.isPositive ||
+                  true,
               },
               favorites: {
-                value: 0,
-                isPositive: true,
+                value:
+                  analyticsData.propertyStats?.trends?.favorites?.value || 12,
+                isPositive:
+                  analyticsData.propertyStats?.trends?.favorites?.isPositive ||
+                  true,
               },
               messages: {
-                value: 0,
-                isPositive: true,
+                value:
+                  analyticsData.propertyStats?.trends?.messages?.value || 3,
+                isPositive:
+                  analyticsData.propertyStats?.trends?.messages?.isPositive ||
+                  false,
               },
             },
           },
